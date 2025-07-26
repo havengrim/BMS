@@ -16,7 +16,7 @@ import {
   Heart,
   ExternalLink,
 } from "lucide-react"
-
+import images from "@/assets/images"
 const quickLinks = [
   { name: "Certificate Requests", href: "/certificates", icon: FileText },
   { name: "Business Permits", href: "/business-permits", icon: Users },
@@ -63,9 +63,11 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <span className="text-lg font-bold">SC</span>
-              </div>
+              <img
+                src={images.logo}
+                className="h-14 w-14 filter grayscale brightness-200"
+              />
+
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-white">Sindalan Connect</span>
                 <span className="text-sm text-slate-400">Barangay Management System</span>

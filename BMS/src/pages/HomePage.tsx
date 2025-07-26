@@ -51,7 +51,7 @@ export default function HomePage() {
 
   <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div className="text-center max-w-4xl mx-auto">
-      <Badge variant="secondary" className="mb-4 uppercase tracking-wide text-sm">
+      <Badge variant="outline" className="mb-4 uppercase tracking-wide text-sm text-white/75">
         Barangay Sindalan Digital Services
       </Badge>
 

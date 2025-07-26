@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/navigation-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, FileText, Users, MessageSquare } from "lucide-react"
+import images from "@/assets/images"
 
 const services = [
   {
@@ -40,9 +41,7 @@ export function Navbar() {
       <div className=" mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <span className="text-sm font-bold">SC</span>
-            </div>
+            <img src={images.logo} className="h-14 w-14"/>
             <div className="flex flex-col">
               <span className="text-lg font-bold">Sindalan Connect</span>
               <span className="text-xs text-muted-foreground">Barangay Management System</span>
@@ -132,7 +131,7 @@ export function Navbar() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right">
-                <div className="flex flex-col space-y-4 mt-4">
+                <div className="p-4 flex flex-col space-y-4 mt-4">
                   <Link to="/" className="text-lg font-medium">
                     Home
                   </Link>
@@ -150,6 +149,9 @@ export function Navbar() {
                   <Link to="/contact" className="text-lg font-medium">
                     Contact
                   </Link>
+                   <Link to="/certificates" className="text-lg font-medium">
+                      Sign In
+                    </Link>
                 </div>
               </SheetContent>
             </Sheet>
