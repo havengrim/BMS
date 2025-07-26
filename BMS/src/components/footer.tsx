@@ -210,19 +210,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* PWA Info */}
-          <div className="mt-4 pt-4 border-t border-slate-800">
-            <div className="flex flex-col md:flex-row justify-between items-center text-xs text-slate-500">
-              <p>
-                Sindalan Connect is a Progressive Web App (PWA) - Install it on your device for the best experience.
-              </p>
-              <div className="flex items-center space-x-4 mt-2 md:mt-0">
-                <span>Version 1.0.0</span>
-                <span>•</span>
-                <span>Last updated: January 2025</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </footer>

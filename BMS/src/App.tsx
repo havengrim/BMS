@@ -15,6 +15,7 @@ import PrivacyPage from "@/pages/PrivacyPage"
 import TermsPage from "@/pages/TermsPage"
 import AccessibilityPage from "@/pages/AccessibilityPage"
 import "./index.css"
+import SindalanConnectChatbot from "./components/Chatbot"
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -32,6 +33,7 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/accessibility" element={<AccessibilityPage />} />
         </Routes>
+        <SindalanConnectChatbot />
       </main>
       <Footer />
       <Toaster />

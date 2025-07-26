@@ -273,7 +273,7 @@ export default function ContactPage() {
           {/* Location Map */}
           <section>
             <Card className="overflow-hidden hover:shadow-lg transition-all duration-200">
-              <CardHeader className="bg-muted/30 border-b">
+              <CardHeader className=" border-b">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-muted rounded-lg">
                     <MapPin className="h-6 w-6" />
