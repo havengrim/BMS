@@ -149,7 +149,7 @@ export function Navbar() {
                   <Link to="/contact" className="text-lg font-medium">
                     Contact
                   </Link>
-                   <Link to="/certificates" className="text-lg font-medium">
+                   <Link to="/login" className="text-lg font-medium">
                       Sign In
                     </Link>
                 </div>
