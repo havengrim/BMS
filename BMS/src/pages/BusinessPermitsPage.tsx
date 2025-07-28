@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { Building, FileText, Clock } from "lucide-react"
+import { Footer } from "@/components/footer"
 
 const businessTypes = [
   "Retail Store",
@@ -236,6 +237,7 @@ export default function BusinessPermitsPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

@@ -44,6 +44,7 @@ const teamMembers = [
     description: "Leading our community with dedication and service for over 8 years.",
     department: "Executive",
     status: "Available",
+    image: "https://api.dicebear.com/9.x/avataaars/svg?seed=Jameson"
   },
   {
     name: "Maria Santos",
@@ -54,6 +55,7 @@ const teamMembers = [
     description: "Managing administrative affairs and ensuring smooth operations.",
     department: "Administration",
     status: "Available",
+    image: "https://api.dicebear.com/9.x/avataaars/svg?seed=Leo"
   },
   {
     name: "Pedro Garcia",
@@ -64,6 +66,7 @@ const teamMembers = [
     description: "Overseeing financial management and budget allocation.",
     department: "Finance",
     status: "In Meeting",
+    image: "https://api.dicebear.com/9.x/avataaars/svg?seed=Brian"
   },
 ]
 
@@ -141,7 +144,7 @@ export default function ContactPage() {
                     <div className="flex items-start gap-4">
                       <Avatar className="h-14 w-14 ring-2 ring-background shadow-sm">
                         <AvatarImage
-                          src={`/placeholder.svg?height=56&width=56&text=${member.initials}`}
+                          src={member.image || `/placeholder.svg?height=56&width=56&text=${member.initials}`}
                           alt={member.name}
                         />
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold">

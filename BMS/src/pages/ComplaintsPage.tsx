@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { MessageSquare, AlertTriangle, Users, Volume2 } from "lucide-react"
+import { Footer } from "@/components/footer"
 
 const complaintTypes = [
   { value: "noise", label: "Noise Complaint", icon: Volume2 },
@@ -247,6 +248,7 @@ export default function ComplaintsPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }
