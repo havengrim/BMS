@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Phone, Mail, MapPin, Clock, MessageSquare, Facebook, Globe, Users, Shield, Calendar } from "lucide-react"
+import { Footer } from "@/components/footer"
 
 const contactInfo = [
   {
@@ -80,7 +81,7 @@ export default function ContactPage() {
               Contact Information
             </div>
             <h1 className="text-4xl font-bold tracking-tight mb-4">Get in Touch</h1>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-lg text-muted-foreground">
               We're here to serve our community. Reach out to us for any inquiries, assistance, or feedback.
             </p>
           </div>
@@ -300,6 +301,7 @@ export default function ContactPage() {
           </section>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

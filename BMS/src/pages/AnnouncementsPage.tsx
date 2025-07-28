@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/navbar"
 import { AnnouncementGallery } from "@/components/announcement-gallery"
 import { announcements } from "@/lib/announcements-data"
+import { Footer } from "@/components/footer"
 
 export default function AnnouncementsPage() {
   return (
@@ -15,6 +16,7 @@ export default function AnnouncementsPage() {
 
         <AnnouncementGallery announcements={announcements} showAll={true} />
       </div>
+      <Footer />
     </div>
   )
 }

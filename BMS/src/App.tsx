@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom"
 import { Toaster } from "@/components/ui/toaster"
 import { OfflineDetector } from "@/components/offline-detector"
-import { Footer } from "@/components/footer"
+
 
 // Pages
 import HomePage from "@/pages/HomePage"
@@ -14,8 +14,13 @@ import OfflinePage from "@/pages/OfflinePage"
 import PrivacyPage from "@/pages/PrivacyPage"
 import TermsPage from "@/pages/TermsPage"
 import AccessibilityPage from "@/pages/AccessibilityPage"
+import LoginPage from "./pages/Authentication/login"
+
 import "./index.css"
 import SindalanConnectChatbot from "./components/Chatbot"
+
+import RegisterPage from "./pages/Authentication/register"
+import Page from "./pages/Dashboard/page"
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -32,10 +37,12 @@ function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/accessibility" element={<AccessibilityPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/dashboard" element={<Page />} />
         </Routes>
         <SindalanConnectChatbot />
       </main>
-      <Footer />
       <Toaster />
     </div>
   )

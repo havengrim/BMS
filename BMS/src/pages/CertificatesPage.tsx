@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { FileText, Clock, CheckCircle } from "lucide-react"
+import { Footer } from "@/components/footer"
 
 const certificateTypes = [
   {
@@ -239,6 +240,7 @@ export default function CertificatesPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

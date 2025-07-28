@@ -111,7 +111,7 @@ export function Navbar() {
                       location.pathname === "/contact" ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
-                    Contact
+                    About Us
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
@@ -120,7 +120,7 @@ export function Navbar() {
 
           <div className="flex items-center gap-2">
             <Button asChild className="hidden md:inline-flex">
-              <Link to="/certificates">Sign In</Link>
+              <Link to="/login">Sign In</Link>
             </Button>
 
             {/* Mobile Navigation */}
