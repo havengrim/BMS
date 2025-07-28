@@ -6,7 +6,6 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
   IconHelp,
   IconReport,
   IconSearch,
@@ -18,6 +17,7 @@ import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import { FiAlertOctagon } from "react-icons/fi";
 import {
   Sidebar,
   SidebarContent,
@@ -52,9 +52,9 @@ const data = {
       icon: BiPhotoAlbum,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
+      title: "Complaints",
+      url: "/manage-complaints",
+      icon: FiAlertOctagon,
     },
     {
       title: "Personnel",

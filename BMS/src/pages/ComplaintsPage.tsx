@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { MessageSquare, AlertTriangle, Users, Volume2 } from "lucide-react"
+import { MessageSquare, AlertTriangle, Users, Volume2, Upload, X, FileImage, FileVideo, Eye } from "lucide-react"
 import { Footer } from "@/components/footer"
 
 const complaintTypes = [
@@ -20,6 +20,10 @@ const complaintTypes = [
   { value: "property", label: "Property Issue", icon: MessageSquare },
   { value: "other", label: "Other", icon: MessageSquare },
 ]
+
+interface FileWithPreview extends File {
+  preview?: string
+}
 
 export default function ComplaintsPage() {
   const [formData, setFormData] = useState({
@@ -35,7 +39,84 @@ export default function ComplaintsPage() {
     requestMediation: false,
     agreeToTerms: false,
   })
+
+  const [files, setFiles] = useState<FileWithPreview[]>([])
+  const [previewFile, setPreviewFile] = useState<FileWithPreview | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || [])
+
+    // Validate file types
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "video/mp4", "video/mov", "video/avi"]
+    const maxSize = 10 * 1024 * 1024 // 10MB
+
+    const validFiles = selectedFiles.filter((file) => {
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not a supported file type.`,
+          variant: "destructive",
+        })
+        return false
+      }
+
+      if (file.size > maxSize) {
+        toast({
+          title: "File too large",
+          description: `${file.name} exceeds the 10MB limit.`,
+          variant: "destructive",
+        })
+        return false
+      }
+
+      return true
+    })
+
+    // Create preview URLs for valid files
+    const filesWithPreview = validFiles.map((file) => {
+      const fileWithPreview = file as FileWithPreview
+      if (file.type.startsWith("image/")) {
+        fileWithPreview.preview = URL.createObjectURL(file)
+      }
+      return fileWithPreview
+    })
+
+    setFiles((prev) => [...prev, ...filesWithPreview])
+
+    if (validFiles.length > 0) {
+      toast({
+        title: "Files uploaded successfully",
+        description: `${validFiles.length} file(s) added as evidence.`,
+      })
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => {
+      const newFiles = [...prev]
+      const removedFile = newFiles[index]
+      if (removedFile.preview) {
+        URL.revokeObjectURL(removedFile.preview)
+      }
+      newFiles.splice(index, 1)
+      return newFiles
+    })
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes"
+    const k = 1024
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,12 +128,16 @@ export default function ComplaintsPage() {
       return
     }
 
+    // In a real application, you would upload the files to a server here
+    console.log("Form data:", formData)
+    console.log("Attached files:", files)
+
     toast({
       title: "Complaint submitted successfully!",
-      description: "Your complaint has been recorded. Reference number: CM-2025-001234",
+      description: `Your complaint has been recorded with ${files.length} attachment(s). Reference number: CM-2025-001234`,
     })
 
-    // Reset form
+    // Reset form and files
     setFormData({
       complainantName: "",
       contactNumber: "",
@@ -66,12 +151,19 @@ export default function ComplaintsPage() {
       requestMediation: false,
       agreeToTerms: false,
     })
+
+    // Clean up file previews
+    files.forEach((file) => {
+      if (file.preview) {
+        URL.revokeObjectURL(file.preview)
+      }
+    })
+    setFiles([])
   }
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">File a Complaint</h1>
@@ -123,7 +215,6 @@ export default function ComplaintsPage() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-4">
                     <h3 className="font-semibold">Complainant Information</h3>
-
                     <div>
                       <Label htmlFor="complainantName">Full Name *</Label>
                       <Input
@@ -133,7 +224,6 @@ export default function ComplaintsPage() {
                         required
                       />
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="contactNumber">Contact Number *</Label>
@@ -155,7 +245,6 @@ export default function ComplaintsPage() {
                         />
                       </div>
                     </div>
-
                     <div>
                       <Label htmlFor="address">Address *</Label>
                       <Textarea
@@ -169,7 +258,6 @@ export default function ComplaintsPage() {
 
                   <div className="space-y-4">
                     <h3 className="font-semibold">Complaint Details</h3>
-
                     <div>
                       <Label htmlFor="subject">Subject *</Label>
                       <Input
@@ -180,7 +268,6 @@ export default function ComplaintsPage() {
                         required
                       />
                     </div>
-
                     <div>
                       <Label htmlFor="description">Detailed Description *</Label>
                       <Textarea
@@ -192,11 +279,78 @@ export default function ComplaintsPage() {
                         required
                       />
                     </div>
+
+                    {/* File Upload Section */}
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Evidence (Photos/Videos)</Label>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Upload photos or videos as evidence. Supported formats: JPG, PNG, GIF, MP4, MOV, AVI (Max 10MB
+                          each)
+                        </p>
+
+                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                          <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Drag and drop files here, or click to select
+                          </p>
+                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                            Choose Files
+                          </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept="image/*,video/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                          />
+                        </div>
+
+                        {/* File List */}
+                        {files.length > 0 && (
+                          <div className="mt-4 space-y-2">
+                            <Label>Attached Files ({files.length})</Label>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {files.map((file, index) => (
+                                <div key={index} className="flex items-center gap-3 p-2 border rounded-lg">
+                                  <div className="flex-shrink-0">
+                                    {file.type.startsWith("image/") ? (
+                                      <FileImage className="h-5 w-5 text-blue-500" />
+                                    ) : (
+                                      <FileVideo className="h-5 w-5 text-purple-500" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{file.name}</p>
+                                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    {file.preview && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setPreviewFile(file)}
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => removeFile(index)}>
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
                     <h3 className="font-semibold">Respondent Information (if applicable)</h3>
-
                     <div>
                       <Label htmlFor="respondentName">Respondent Name</Label>
                       <Input
@@ -206,7 +360,6 @@ export default function ComplaintsPage() {
                         onChange={(e) => setFormData({ ...formData, respondentName: e.target.value })}
                       />
                     </div>
-
                     <div>
                       <Label htmlFor="respondentAddress">Respondent Address</Label>
                       <Textarea
@@ -247,6 +400,27 @@ export default function ComplaintsPage() {
             </Card>
           </div>
         </div>
+
+        {/* Image Preview Modal */}
+        {previewFile && previewFile.preview && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background rounded-lg max-w-4xl max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="font-semibold">{previewFile.name}</h3>
+                <Button variant="ghost" size="sm" onClick={() => setPreviewFile(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="p-4">
+                <img
+                  src={previewFile.preview || "/placeholder.svg"}
+                  alt={previewFile.name}
+                  className="max-w-full max-h-[70vh] object-contain mx-auto"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <Footer />
     </div>
