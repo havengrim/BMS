@@ -9,13 +9,12 @@ import {
   IconFileWord,
   IconFolder,
   IconHelp,
-  IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react"
-
+import { IoDocumentTextOutline } from "react-icons/io5";
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -44,9 +43,9 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
+      title: "Certificates",
+      url: "/certificates-list",
+      icon: IoDocumentTextOutline,
     },
     {
       title: "Analytics",
@@ -59,8 +58,8 @@ const data = {
       icon: IconFolder,
     },
     {
-      title: "Team",
-      url: "#",
+      title: "Personnel",
+      url: "/personnel",
       icon: IconUsers,
     },
   ],

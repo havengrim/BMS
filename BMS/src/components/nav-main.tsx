@@ -1,6 +1,3 @@
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
-
-import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -9,13 +6,26 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
+import { Button } from "@/components/ui/button"
+
+import { IconCirclePlusFilled, IconMail } from "@tabler/icons-react"
+
+import { Link } from "react-router-dom" // ✅ Added Link
+
+// nav-main.tsx
+
+import type { Icon as TablerIcon } from "@tabler/icons-react"
+import type { IconType } from "react-icons"
+
+type IconCompatible = TablerIcon | IconType
+
 export function NavMain({
   items,
 }: {
   items: {
     title: string
     url: string
-    icon?: Icon
+    icon?: IconCompatible
   }[]
 }) {
   return (
@@ -43,10 +53,12 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-              </SidebarMenuButton>
+              <Link to={item.url} className="w-full">
+                <SidebarMenuButton tooltip={item.title}>
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
