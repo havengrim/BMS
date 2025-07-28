@@ -1,7 +1,6 @@
 import * as React from "react"
 import {
   IconCamera,
-  IconChartBar,
   IconDashboard,
   IconDatabase,
   IconFileAi,
@@ -29,7 +28,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import images from "@/assets/images"
-
+import { BiPhotoAlbum } from "react-icons/bi";
 const data = {
   user: {
     name: "John Doe",
@@ -48,9 +47,9 @@ const data = {
       icon: IoDocumentTextOutline,
     },
     {
-      title: "Analytics",
-      url: "#",
-      icon: IconChartBar,
+      title: "Announcements",
+      url: "/announcements-manager",
+      icon: BiPhotoAlbum,
     },
     {
       title: "Projects",

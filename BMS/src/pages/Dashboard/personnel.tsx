@@ -405,8 +405,8 @@ export default function Personnel() {
               {/* Header */}
               <div className="flex items-center justify-between px-6">
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight">Personnel Management</h1>
-                  <p className="text-muted-foreground">Manage barangay personnel information and access</p>
+                  <h1 className="text-xl font-bold tracking-tight">Personnel Management</h1>
+                  <p className="text-muted-foreground text-md">Manage barangay personnel information and access</p>
                 </div>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
