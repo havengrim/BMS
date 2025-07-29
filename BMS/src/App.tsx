@@ -25,6 +25,7 @@ import Personnel from "./pages/Dashboard/personnel"
 import Certificates from "./pages/Dashboard/certificates"
 import Announcements from "./pages/Dashboard/announcements"
 import ComplaintsDashboard  from "./pages/Dashboard/complaints"
+import Notification from "./pages/Dashboard/notification"
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -48,6 +49,7 @@ function App() {
           <Route path="/certificates-list" element={<Certificates /> } />
           <Route path="/announcements-manager" element={<Announcements /> } />
           <Route path="/manage-complaints" element={<ComplaintsDashboard /> } />
+           <Route path="/notification" element={<Notification /> } />
         </Routes>
         <SindalanConnectChatbot />
       </main>
