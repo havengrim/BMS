@@ -1,11 +1,9 @@
-// lib/api.ts
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
 export const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/',
+  baseURL: import.meta.env.VITE_API_URL,
 });
-
 
 api.interceptors.request.use((config) => {
   const accessToken = Cookies.get('access_token');

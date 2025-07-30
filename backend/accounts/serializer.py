@@ -8,9 +8,9 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 class RegisterSerializer(serializers.ModelSerializer):
     contact_number = serializers.CharField(write_only=True)
     address = serializers.CharField(write_only=True)
-    civil_status = serializers.ChoiceField(choices=Profile.CIVIL_STATUS_CHOICES, write_only=True)
+    civil_status = serializers.CharField( write_only=True)
     birthdate = serializers.DateField(write_only=True)
-    role = serializers.ChoiceField(choices=Profile.ROLE_CHOICES, default='personnel', write_only=True)
+    role = serializers.CharField(write_only=True, required=False, default='user')
     confirm_password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -38,7 +38,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         address = validated_data.pop('address')
         civil_status = validated_data.pop('civil_status')
         birthdate = validated_data.pop('birthdate')
-        role = validated_data.pop('role')
+        role = validated_data.pop('role', 'user')
         validated_data.pop('confirm_password')
 
         user = User.objects.create_user(

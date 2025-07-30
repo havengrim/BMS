@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom"
-import { Toaster } from "@/components/ui/toaster"
 import { OfflineDetector } from "@/components/offline-detector"
-
+import { Toaster } from '@/components/ui/toaster';
 
 // Pages
 import HomePage from "@/pages/HomePage"

@@ -13,6 +13,7 @@ import images from "@/assets/images";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useLogin } from "@/stores/useAccount";
+import Spinner from "@/components/ui/spinner"; // <-- import spinner
 
 export function LoginForm({
   className,
@@ -21,7 +22,9 @@ export function LoginForm({
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { mutate: login, isPending, isError } = useLogin();
+  const { mutate: login, status, isError } = useLogin();
+
+  const isPending = status === "pending";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +42,7 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center flex flex-col justify-center items-center">
-          <img src={images.logo} className="h-14 w-14" />
+          <img src={images.logo} className="h-14 w-14" alt="Logo" />
           <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
             Enter your email and password to continue
@@ -78,6 +81,7 @@ export function LoginForm({
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending && <Spinner className="mr-2 h-5 w-5 text-white inline-block" />}
                 {isPending ? "Logging in..." : "Login"}
               </Button>
               {isError && (
