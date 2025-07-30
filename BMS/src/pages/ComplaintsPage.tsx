@@ -291,7 +291,7 @@ const LocationPicker = ({
       <div className="relative">
         <div 
           ref={mapRef} 
-          className="w-full h-64 rounded-lg border border-border bg-gray-100" 
+          className="w-full h-64 rounded-lg border border-border bg-gray-100 z-0" 
           style={{ minHeight: "256px" }} 
         />
         {!mapLoaded && (
