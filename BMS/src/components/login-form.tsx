@@ -38,7 +38,7 @@ export function LoginForm({
           <img src={images.logo} className="h-14 w-14" />
           <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
-            Login with your Apple or Google account
+            Enter your email and password to continue
           </CardDescription>
         </CardHeader>
         <CardContent>

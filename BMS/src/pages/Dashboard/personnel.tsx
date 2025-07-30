@@ -540,16 +540,16 @@ export default function Personnel() {
                             <TableCell>{person.civilStatus}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => handleView(person)}>
+                                <Button variant="outline" size="sm" onClick={() => handleView(person)}>
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => handleEdit(person)}>
+                                <Button variant="outline" size="sm" onClick={() => handleEdit(person)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <Trash2 className="h-4 w-4" />
+                                    <Button variant="outline" size="sm">
+                                      <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>

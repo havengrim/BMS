@@ -563,8 +563,8 @@ export default function AnnouncementsPage() {
               {/* Header */}
               <div className="flex items-center justify-between px-6">
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight">Announcements Management</h1>
-                  <p className="text-muted-foreground">Create and manage barangay announcements and events</p>
+                  <h1 className="text-xl font-bold tracking-tight">Announcements Management</h1>
+                  <p className="text-muted-foreground text-md">Create and manage barangay announcements and events</p>
                 </div>
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
@@ -759,16 +759,16 @@ export default function AnnouncementsPage() {
                             <TableCell>{announcement.views}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => handleView(announcement)}>
+                                <Button variant="outline" size="sm" onClick={() => handleView(announcement)}>
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => handleEdit(announcement)}>
+                                <Button variant="outline" size="sm" onClick={() => handleEdit(announcement)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <Trash2 className="h-4 w-4" />
+                                    <Button variant="outline" size="sm">
+                                      <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>

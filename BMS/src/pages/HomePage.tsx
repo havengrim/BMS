@@ -4,6 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Navbar } from "@/components/navbar"
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
   FileText,
   Users,
   MessageSquare,
@@ -344,16 +350,19 @@ export default function HomePage() {
               </h3>
               <p className="text-muted-foreground max-w-md mx-auto">Quick answers to common questions</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {faqs.map((faq, index) => (
-                <Card key={index} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-base sm:text-lg">{faq.question}</CardTitle>
-                    <CardDescription className="text-sm sm:text-base">{faq.answer}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
+           <Accordion type="single" collapsible className="w-full max-w-4xl mx-auto space-y-2">
+            {faqs.map((faq, index) => (
+              <AccordionItem key={index} value={`item-${index}`}>
+                <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm sm:text-base text-muted-foreground">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+
             <div className="text-center mt-8">
               <Button variant="outline" asChild>
                 <Link to="/faq">
