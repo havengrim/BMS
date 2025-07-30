@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +14,8 @@ import {
   IoTicket,
   IoShieldCheckmark,
 } from "react-icons/io5"
+import { useMutation } from "@tanstack/react-query"
+import { api } from "@/lib/api"
 
 export default function SindalanConnectChatbot() {
   const [messages, setMessages] = useState([
@@ -26,20 +29,24 @@ export default function SindalanConnectChatbot() {
   const [input, setInput] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  // React Query mutation to call chatbot API
+  const chatbotMutation = useMutation({
+    mutationFn: (data: { message: string }) =>
+      api.post("/api/chatbot/query/", data).then((res) => res.data),
+  })
 
   // Show tooltip periodically every minute when chat is closed
   useEffect(() => {
     if (!isOpen) {
-      // Show tooltip immediately when component mounts
       setShowTooltip(true)
 
       const interval = setInterval(() => {
         setShowTooltip(true)
-        // Hide tooltip after 3 seconds
         setTimeout(() => setShowTooltip(false), 3000)
-      }, 60000) // Every 60 seconds (1 minute)
+      }, 60000)
 
-      // Hide the initial tooltip after 3 seconds
       const initialTimeout = setTimeout(() => setShowTooltip(false), 3000)
 
       return () => {
@@ -57,25 +64,47 @@ export default function SindalanConnectChatbot() {
   ]
 
   const handleSendMessage = () => {
-    if (input.trim()) {
-      const newMessage = {
-        id: messages.length + 1,
-        type: "user",
-        content: input,
-        timestamp: new Date(),
-      }
-      setMessages([...messages, newMessage])
-      setInput("")
-      setTimeout(() => {
-        const assistantResponse = {
-          id: messages.length + 2,
-          type: "assistant",
-          content: "Thank you for contacting Sindalan Connect. How may I assist you with your barangay services?",
-          timestamp: new Date(),
-        }
-        setMessages((prev) => [...prev, assistantResponse])
-      }, 1000)
+    if (!input.trim()) return
+
+    const userMessage = {
+      id: messages.length + 1,
+      type: "user",
+      content: input,
+      timestamp: new Date(),
     }
+    setMessages((prev) => [...prev, userMessage])
+    setInput("")
+    setLoading(true)
+
+    chatbotMutation.mutate(
+      { message: input },
+      {
+        onSuccess: (data) => {
+          const assistantResponse = {
+            id: messages.length + 2,
+            type: "assistant",
+            content:
+              data?.reply ||
+              "Sorry, I couldn't process your request at the moment.",
+            timestamp: new Date(),
+          }
+          setMessages((prev) => [...prev, assistantResponse])
+        },
+        onError: () => {
+          const errorResponse = {
+            id: messages.length + 2,
+            type: "assistant",
+            content:
+              "Oops, something went wrong while connecting to the chatbot. Please try again.",
+            timestamp: new Date(),
+          }
+          setMessages((prev) => [...prev, errorResponse])
+        },
+        onSettled: () => {
+          setLoading(false)
+        },
+      }
+    )
   }
 
   const handleQuickAction = (action: string) => {
@@ -85,14 +114,15 @@ export default function SindalanConnectChatbot() {
       content: action,
       timestamp: new Date(),
     }
-    setMessages([...messages, newMessage])
+    setMessages((prev) => [...prev, newMessage])
     setTimeout(() => {
       let assistantResponse = ""
       if (action === "Submit Support Ticket") {
         assistantResponse =
           "I'll help you submit a support ticket. Please describe your concern and I'll create a ticket for you."
       } else {
-        assistantResponse = "I can help you search our support articles. What specific information are you looking for?"
+        assistantResponse =
+          "I can help you search our support articles. What specific information are you looking for?"
       }
       const response = {
         id: messages.length + 2,
@@ -166,7 +196,10 @@ export default function SindalanConnectChatbot() {
         <CardContent className="flex-1 p-0">
           <div className="h-[380px] overflow-y-auto p-4 space-y-4 bg-gray-50/50">
             {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
+              <div
+                key={message.id}
+                className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
+              >
                 {message.type === "assistant" && (
                   <div className="flex-shrink-0 mr-3">
                     <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
@@ -229,12 +262,13 @@ export default function SindalanConnectChatbot() {
                 placeholder="Type your message here..."
                 className="flex-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                disabled={loading}
               />
               <Button
                 onClick={handleSendMessage}
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700 px-3"
-                disabled={!input.trim()}
+                disabled={!input.trim() || loading}
               >
                 <IoSend className="h-4 w-4" />
               </Button>
