@@ -14,7 +14,7 @@ import PrivacyPage from "@/pages/PrivacyPage"
 import TermsPage from "@/pages/TermsPage"
 import AccessibilityPage from "@/pages/AccessibilityPage"
 import LoginPage from "./pages/Authentication/login"
-
+import { useLoadCurrentUser } from '@/stores/useAccount';
 import "./index.css"
 import SindalanConnectChatbot from "./components/Chatbot"
 
@@ -26,6 +26,7 @@ import Announcements from "./pages/Dashboard/announcements"
 import ComplaintsDashboard  from "./pages/Dashboard/complaints"
 import Notification from "./pages/Dashboard/notification"
 function App() {
+  useLoadCurrentUser();
   return (
     <div className="flex flex-col min-h-screen">
       <OfflineDetector />

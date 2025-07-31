@@ -23,6 +23,7 @@ import { useRegister } from "@/stores/useAccount";
 import  Spinner  from "@/components/ui/spinner";  // <-- import Spinner
 
 type RegisterFormData = {
+  name:string;
   username: string;
   email: string;
   password: string;
@@ -38,6 +39,7 @@ export function RegisterForm({
   ...props
 }: React.ComponentProps<"div">) {
   const [form, setForm] = useState<RegisterFormData>({
+    name:"",
     username: "",
     email: "",
     password: "",
@@ -90,6 +92,20 @@ export function RegisterForm({
                   required
                 />
               </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="name">Full Name:</Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="Juan Dela Cruz"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
 
               {/* Email */}
               <div className="grid gap-2">
@@ -183,11 +199,12 @@ export function RegisterForm({
               </div>
 
               {/* Birthdate */}
-              <div className="grid gap-2">
+              <div className="grid gap-2 w-full">
                 <Label htmlFor="birthdate">Birthdate</Label>
                 <Input
                   id="birthdate"
                   name="birthdate"
+                  className="w-full block"
                   type="date"
                   value={form.birthdate}
                   onChange={handleChange}

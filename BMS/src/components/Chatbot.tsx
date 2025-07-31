@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -13,12 +13,21 @@ import {
   IoDocumentText,
   IoTicket,
   IoShieldCheckmark,
+  IoStop,
 } from "react-icons/io5"
 import { useMutation } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 
+interface Message {
+  id: number
+  type: "user" | "assistant"
+  content: string
+  timestamp: Date
+  isTyping?: boolean
+}
+
 export default function SindalanConnectChatbot() {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       type: "assistant",
@@ -30,25 +39,29 @@ export default function SindalanConnectChatbot() {
   const [isOpen, setIsOpen] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isThinking, setIsThinking] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
+  const [canStop, setCanStop] = useState(false)
+
+  const typewriterRef = useRef<number | null>(null)
+  const thinkingRef = useRef<number | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // React Query mutation to call chatbot API
   const chatbotMutation = useMutation({
-    mutationFn: (data: { message: string }) =>
-      api.post("/api/chatbot/query/", data).then((res) => res.data),
+    mutationFn: (data: { message: string; signal?: AbortSignal }) =>
+      api.post("/api/chatbot/query/", data, { signal: data.signal }).then((res) => res.data),
   })
 
   // Show tooltip periodically every minute when chat is closed
   useEffect(() => {
     if (!isOpen) {
       setShowTooltip(true)
-
       const interval = setInterval(() => {
         setShowTooltip(true)
         setTimeout(() => setShowTooltip(false), 3000)
       }, 60000)
-
       const initialTimeout = setTimeout(() => setShowTooltip(false), 3000)
-
       return () => {
         clearInterval(interval)
         clearTimeout(initialTimeout)
@@ -58,81 +71,184 @@ export default function SindalanConnectChatbot() {
     }
   }, [isOpen])
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typewriterRef.current) clearTimeout(typewriterRef.current)
+      if (thinkingRef.current) clearTimeout(thinkingRef.current)
+      if (abortControllerRef.current) abortControllerRef.current.abort()
+    }
+  }, [])
+
   const quickActions = [
     { text: "Search Support Articles", icon: IoDocumentText },
     { text: "Submit Support Ticket", icon: IoTicket },
   ]
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return
+  // Typewriter effect function
+  const typewriterEffect = (text: string, messageId: number) => {
+    setIsTyping(true)
+    setCanStop(true)
+    let index = 0
 
-    const userMessage = {
+    const type = () => {
+      if (index < text.length) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId ? { ...msg, content: text.substring(0, index + 1), isTyping: true } : msg,
+          ),
+        )
+        index++
+        typewriterRef.current = setTimeout(type, 30) // Adjust speed here
+      } else {
+        setMessages((prev) => prev.map((msg) => (msg.id === messageId ? { ...msg, isTyping: false } : msg)))
+        setIsTyping(false)
+        setCanStop(false)
+      }
+    }
+
+    type()
+  }
+
+  // Stop function
+  const handleStop = () => {
+    // Cancel API request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Clear timeouts
+    if (typewriterRef.current) {
+      clearTimeout(typewriterRef.current)
+      typewriterRef.current = null
+    }
+    if (thinkingRef.current) {
+      clearTimeout(thinkingRef.current)
+      thinkingRef.current = null
+    }
+
+    // Reset states
+    setLoading(false)
+    setIsThinking(false)
+    setIsTyping(false)
+    setCanStop(false)
+
+    // Complete any partial message
+    setMessages((prev) => prev.map((msg) => ({ ...msg, isTyping: false })))
+  }
+
+  const handleSendMessage = () => {
+    if (!input.trim() || loading) return
+
+    const userMessage: Message = {
       id: messages.length + 1,
       type: "user",
       content: input,
       timestamp: new Date(),
     }
+
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setLoading(true)
+    setIsThinking(true)
+    setCanStop(true)
 
-    chatbotMutation.mutate(
-      { message: input },
-      {
-        onSuccess: (data) => {
-          const assistantResponse = {
-            id: messages.length + 2,
-            type: "assistant",
-            content:
-              data?.reply ||
-              "Sorry, I couldn't process your request at the moment.",
-            timestamp: new Date(),
-          }
-          setMessages((prev) => [...prev, assistantResponse])
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController()
+
+    // Show thinking animation for 1-2 seconds
+    thinkingRef.current = setTimeout(() => {
+      setIsThinking(false)
+
+      chatbotMutation.mutate(
+        { message: input, signal: abortControllerRef.current?.signal },
+        {
+          onSuccess: (data) => {
+            const assistantResponse: Message = {
+              id: messages.length + 2,
+              type: "assistant",
+              content: "",
+              timestamp: new Date(),
+              isTyping: true,
+            }
+
+            setMessages((prev) => [...prev, assistantResponse])
+            setLoading(false)
+
+            const responseText = data?.reply || "Sorry, I couldn't process your request at the moment."
+            typewriterEffect(responseText, assistantResponse.id)
+          },
+          onError: (error: any) => {
+            if (error.name === "AbortError") {
+              return // Request was cancelled, don't show error
+            }
+
+            const errorResponse: Message = {
+              id: messages.length + 2,
+              type: "assistant",
+              content: "",
+              timestamp: new Date(),
+              isTyping: true,
+            }
+
+            setMessages((prev) => [...prev, errorResponse])
+            setLoading(false)
+
+            const errorText = "Oops, something went wrong while connecting to the chatbot. Please try again."
+            typewriterEffect(errorText, errorResponse.id)
+          },
         },
-        onError: () => {
-          const errorResponse = {
-            id: messages.length + 2,
-            type: "assistant",
-            content:
-              "Oops, something went wrong while connecting to the chatbot. Please try again.",
-            timestamp: new Date(),
-          }
-          setMessages((prev) => [...prev, errorResponse])
-        },
-        onSettled: () => {
-          setLoading(false)
-        },
-      }
-    )
+      )
+    }, 1500) // Thinking delay
   }
 
   const handleQuickAction = (action: string) => {
-    const newMessage = {
+    const newMessage: Message = {
       id: messages.length + 1,
       type: "user",
       content: action,
       timestamp: new Date(),
     }
+
     setMessages((prev) => [...prev, newMessage])
-    setTimeout(() => {
+    setIsThinking(true)
+    setCanStop(true)
+
+    thinkingRef.current = setTimeout(() => {
+      setIsThinking(false)
+
       let assistantResponse = ""
       if (action === "Submit Support Ticket") {
         assistantResponse =
           "I'll help you submit a support ticket. Please describe your concern and I'll create a ticket for you."
       } else {
-        assistantResponse =
-          "I can help you search our support articles. What specific information are you looking for?"
+        assistantResponse = "I can help you search our support articles. What specific information are you looking for?"
       }
-      const response = {
+
+      const response: Message = {
         id: messages.length + 2,
         type: "assistant",
-        content: assistantResponse,
+        content: "",
         timestamp: new Date(),
+        isTyping: true,
       }
+
       setMessages((prev) => [...prev, response])
+      typewriterEffect(assistantResponse, response.id)
     }, 1000)
   }
+
+  // Thinking dots component
+  const ThinkingDots = () => (
+    <div className="flex space-x-1 items-center">
+      <div className="flex space-x-1">
+        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+      </div>
+      <span className="text-sm text-gray-500 ml-2">Thinking...</span>
+    </div>
+  )
 
   // When closed, show message icon + tooltip bubble on the left side
   if (!isOpen) {
@@ -147,7 +263,6 @@ export default function SindalanConnectChatbot() {
               <div className="absolute top-1/2 -right-2 transform -translate-y-1/2 w-0 h-0 border-l-8 border-l-blue-600 border-t-4 border-t-transparent border-b-4 border-b-transparent"></div>
             </div>
           )}
-
           <Button
             onClick={() => {
               setIsOpen(true)
@@ -177,18 +292,33 @@ export default function SindalanConnectChatbot() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Sindalan Connect</h3>
-                <p className="text-blue-100 text-xs">Barangay Support Assistant</p>
+                <p className="text-blue-100 text-xs">
+                  {isThinking ? "Thinking..." : isTyping ? "Typing..." : "Barangay Support Assistant"}
+                </p>
               </div>
             </div>
-            <Button
-              onClick={() => setIsOpen(false)}
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-white/20 h-8 w-8 p-0"
-              aria-label="Close chat"
-            >
-              <IoClose className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center space-x-2">
+              {canStop && (
+                <Button
+                  onClick={handleStop}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20 h-8 w-8 p-0"
+                  aria-label="Stop response"
+                >
+                  <IoStop className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                onClick={() => setIsOpen(false)}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/20 h-8 w-8 p-0"
+                aria-label="Close chat"
+              >
+                <IoClose className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
 
@@ -196,10 +326,7 @@ export default function SindalanConnectChatbot() {
         <CardContent className="flex-1 p-0">
           <div className="h-[380px] overflow-y-auto p-4 space-y-4 bg-gray-50/50">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
-              >
+              <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                 {message.type === "assistant" && (
                   <div className="flex-shrink-0 mr-3">
                     <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
@@ -215,7 +342,12 @@ export default function SindalanConnectChatbot() {
                         : "bg-white border border-gray-200 rounded-bl-sm shadow-sm"
                     }`}
                   >
-                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <p className="text-sm leading-relaxed">
+                      {message.content}
+                      {message.isTyping && (
+                        <span className="inline-block w-2 h-4 bg-current ml-1 animate-pulse">|</span>
+                      )}
+                    </p>
                   </div>
                   <p className="text-xs text-gray-500 mt-1 px-1">
                     {message.timestamp.toLocaleTimeString([], {
@@ -234,8 +366,24 @@ export default function SindalanConnectChatbot() {
               </div>
             ))}
 
+            {/* Thinking indicator */}
+            {isThinking && (
+              <div className="flex justify-start">
+                <div className="flex-shrink-0 mr-3">
+                  <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <IoShieldCheckmark className="h-4 w-4 text-white" />
+                  </div>
+                </div>
+                <div className="max-w-[280px]">
+                  <div className="px-4 py-3 rounded-lg bg-white border border-gray-200 rounded-bl-sm shadow-sm">
+                    <ThinkingDots />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Quick Actions - Show only after initial message */}
-            {messages.length === 1 && (
+            {messages.length === 1 && !isThinking && !isTyping && (
               <div className="space-y-3 mt-6">
                 <p className="text-xs text-gray-600 font-medium px-1">Quick Actions:</p>
                 {quickActions.map((action, index) => (
@@ -244,6 +392,7 @@ export default function SindalanConnectChatbot() {
                     variant="outline"
                     className="w-full justify-start text-left h-auto py-3 px-4 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 bg-transparent"
                     onClick={() => handleQuickAction(action.text)}
+                    disabled={loading || isThinking || isTyping}
                   >
                     <action.icon className="h-4 w-4 mr-3 flex-shrink-0" />
                     <span className="text-sm">{action.text}</span>
@@ -262,13 +411,13 @@ export default function SindalanConnectChatbot() {
                 placeholder="Type your message here..."
                 className="flex-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                disabled={loading}
+                disabled={loading || isThinking || isTyping}
               />
               <Button
                 onClick={handleSendMessage}
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700 px-3"
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || loading || isThinking || isTyping}
               >
                 <IoSend className="h-4 w-4" />
               </Button>

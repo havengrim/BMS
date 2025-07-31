@@ -1,16 +1,31 @@
-import { useMutation, type UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import type { UseMutationResult } from '@tanstack/react-query';
 import { api } from '@/lib/api'; 
 import { useAuthStore } from '@/stores/authStore';
-import { useToast } from '@/hooks/use-toast'; // ✅ correct import
+import { useToast } from '@/hooks/use-toast'; 
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
-type LoginInput = {
-  email: string;
-  password: string;
-};
+type LoginInput = { email: string; password: string; };
 
 type LoginResponse = {
   access: string;
   refresh: string;
+  message: string;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    profile: {
+      name: string;
+      contact_number: string;
+      address: string;
+      civil_status: string;
+      birthdate: string;
+      role: string;
+      image: string | null;
+    };
+  };
 };
 
 type RegisterInput = {
@@ -21,27 +36,49 @@ type RegisterInput = {
   contact_number: string;
   address: string;
   civil_status: string;
-  birthdate: string; // "YYYY-MM-DD" format
-  // role omitted since admin sets it
+  birthdate: string;
 };
 
-type RegisterResponse = {
-  message: string;
+type RegisterResponse = { message: string };
+
+type UserProfile = {
+  name: string;
+  contact_number: string;
+  address: string;
+  civil_status: string;
+  birthdate: string;
+  role: string;
+  image: string | null;
+};
+
+export type User = {
+  id: number;
+  username: string;
+  email: string;
+  profile: UserProfile;
 };
 
 export const useLogin = () => {
-  const setTokens = useAuthStore((s) => s.setTokens);
+  const setUser = useAuthStore((s) => s.setUser);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   return useMutation<LoginResponse, Error, LoginInput>({
     mutationFn: (data) => api.post('/api/token/', data).then((res) => res.data),
-    onSuccess: ({ access, refresh }) => {
-      setTokens(access, refresh);
+    onSuccess: ({ user }) => {
+      setUser(user); // tokens are HttpOnly cookies, no need to store in state
+
       toast({
         title: 'Login Successful',
         description: 'You have been logged in.',
-        variant: 'default',
+        variant: 'success',
       });
+
+      if (user.profile?.role?.toLowerCase() === 'user') {
+        navigate('/');
+      } else {
+        navigate('/dashboard');
+      }
     },
     onError: (error) => {
       toast({
@@ -52,6 +89,35 @@ export const useLogin = () => {
     },
   });
 };
+
+export const useLogout = () => {
+  const logout = useAuthStore((s) => s.logout);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/api/logout/", {}, { withCredentials: true }); // ✅ Send cookies
+    } catch (error) {
+      console.error("Logout API error:", error); // Even on failure, proceed
+    }
+
+    logout(); // Clear Zustand state
+
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully.",
+      variant: "default",
+    });
+
+    setTimeout(() => {
+      navigate("/login");
+    }, 1500);
+  };
+
+  return handleLogout;
+};
+
 
 export const useRegister = (): UseMutationResult<RegisterResponse, Error, RegisterInput> => {
   const { toast } = useToast();
@@ -74,3 +140,41 @@ export const useRegister = (): UseMutationResult<RegisterResponse, Error, Regist
     },
   });
 };
+
+export const useUsers = () => {
+  return useQuery<User[], Error>({
+    queryKey: ['users'],
+    queryFn: () => api.get('/api/users/').then(res => res.data),
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+export function useLoadCurrentUser() {
+  const setUser = useAuthStore((s) => s.setUser);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        // Try to get current user with cookies sent
+        const res = await api.get('/api/auth/user/', { withCredentials: true });
+        setUser(res.data);
+      } catch (err: any) {
+        if (err.response?.status === 401) {
+          // Unauthorized: try refreshing token
+          try {
+            await api.post('/api/token/refresh/', null, { withCredentials: true });
+            // Retry fetching user again with cookies
+            const res = await api.get('/api/auth/user/', { withCredentials: true });
+            setUser(res.data);
+          } catch {
+            clearAuth();
+          }
+        } else {
+          clearAuth();
+        }
+      }
+    }
+    fetchUser();
+  }, [setUser, clearAuth]);
+}

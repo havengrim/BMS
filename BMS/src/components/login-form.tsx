@@ -10,32 +10,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import images from "@/assets/images";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useLogin } from "@/stores/useAccount";
-import Spinner from "@/components/ui/spinner"; // <-- import spinner
+import Spinner from "@/components/ui/spinner";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { mutate: login, status, isError } = useLogin();
-
   const isPending = status === "pending";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
 
-    login(
-      { email, password },
-      {
-        onSuccess: () => navigate("/dashboard"),
-      }
-    );
+    login({ email, password }); // Removed onSuccess callback
   };
 
   return (

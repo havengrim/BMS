@@ -18,6 +18,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { FiAlertOctagon } from "react-icons/fi";
+import { useAuthStore } from "@/stores/authStore"
 import {
   Sidebar,
   SidebarContent,
@@ -30,11 +31,7 @@ import {
 import images from "@/assets/images"
 import { BiPhotoAlbum } from "react-icons/bi";
 const data = {
-  user: {
-    name: "John Doe",
-    email: "doe@example.com",
-    avatar: "https://github.com/leerob.png",
-  },
+
   navMain: [
     {
       title: "Dashboard",
@@ -147,6 +144,14 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+   const user = useAuthStore((state) => state.user);
+   console.log(user)
+
+    const userData = {
+    name: user?.profile?.name || user?.username || "Unknown User",
+    email: user?.email || "no-email@example.com",
+    avatar: user?.profile?.image || "https://github.com/leerob.png",
+  }
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -170,7 +175,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>
   )
