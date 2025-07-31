@@ -1,7 +1,8 @@
-"use client"
+"use client";
 
-import { Link, useLocation, useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -9,10 +10,10 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, FileText, Users, MessageSquare, User, LogOut } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/navigation-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, FileText, Users, MessageSquare, User, LogOut } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,10 +21,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import images from "@/assets/images"
-import { useAuthStore } from "@/stores/authStore"
-import { useLogout } from "@/stores/useAccount"
+} from "@/components/ui/dropdown-menu";
+import images from "@/assets/images";
+import { useAuthStore } from "@/stores/authStore";
+import { useLogout } from "@/stores/useAccount";
 
 const services = [
   {
@@ -44,13 +45,13 @@ const services = [
     description: "Submit complaints and incident reports",
     icon: MessageSquare,
   },
-]
+];
 
 export function Navbar() {
-  const location = useLocation()
-  const { user } = useAuthStore()
-  const navigate = useNavigate()
-  const handleLogout = useLogout()
+  const location = useLocation();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const handleLogout = useLogout();
 
   return (
     <header className="sticky top-0 z-10 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -137,7 +138,7 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Avatar className="cursor-pointer h-8 w-8 hidden md:flex">
                     <AvatarImage src={user.profile.image || undefined} alt={user.username} />
-                    <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="font-semibold">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -166,14 +167,20 @@ export function Navbar() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+
+             <SheetContent
+                side="right"
+                accessibilityTitle="Mobile Navigation Menu"
+                accessibilityDescription="Navigate through the mobile menu options"
+                className="w-[300px] sm:w-[400px]"
+              >
                 <div className="flex flex-col h-full">
                   {/* User Profile Section - Mobile */}
                   {user && user.profile?.role === "user" ? (
                     <div className="flex items-center gap-3 p-4 border-b">
                       <Avatar className="h-12 w-12">
                         <AvatarImage src={user.profile.image || undefined} alt={user.username} />
-                        <AvatarFallback className="text-lg">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className="font-semibold">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
                         <span className="font-medium text-sm">{user.username}</span>
@@ -194,7 +201,9 @@ export function Navbar() {
                     </Link>
 
                     <div className="space-y-3">
-                      <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Services</p>
+                      <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                        Services
+                      </p>
                       <div className="space-y-2 pl-2">
                         {services.map((service) => (
                           <Link
@@ -261,5 +270,5 @@ export function Navbar() {
         </div>
       </div>
     </header>
-  )
+  );
 }

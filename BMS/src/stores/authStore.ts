@@ -1,56 +1,62 @@
-import { create } from "zustand";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { User } from '@/types/auth';
+import { api } from '@/lib/api';
+import Cookies from 'js-cookie';
 
-
-export type UserProfile = {
-  name: string;
-  contact_number: string;
-  address: string;
-  civil_status: string;
-  birthdate: string;
-  role: string;
-  image?: string | null;
-};
-
-export type User = {
-  id: number;
-  username: string;
-  email: string;
-  profile?: UserProfile | null;
-};
-
-export type AuthState = {
+type AuthState = {
+  [x: string]: any;
   user: User | null;
-  // You might not need to store tokens if using HttpOnly cookies for security
-  accessToken: string | null;
-  refreshToken: string | null;
-  setTokens: (access: string, refresh: string) => void;
-  setUser: (user: User | null) => void;
+  token: string | null;
+  
+  setUser: (user: User) => void;
   clearAuth: () => void;
   logout: () => void;
+  refreshToken: () => Promise<void>;
+  
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  // Since cookies are HttpOnly, js-cookie won't see them. You can set null here initially.
-  accessToken: null,
-  refreshToken: null,
-  setTokens: (access, refresh) => {
-    // If you want to store tokens in non-HttpOnly cookies (not recommended), you can set them here.
-    // Otherwise, your backend manages tokens via HttpOnly cookies.
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      token: Cookies.get('access_token') || null,
 
-    console.log("setTokens called, but tokens stored server-side in HttpOnly cookies");
+      setUser: (user) => set({ user }),
 
-    // Optionally save tokens in store if you get them from somewhere else:
-    set({ accessToken: access, refreshToken: refresh });
-  },
-  setUser: (user) => set({ user }),
-  clearAuth: () => {
-    // Call your backend logout endpoint to clear HttpOnly cookies if you have one
-    // Here just clear user state and tokens in store
-    set({ user: null, accessToken: null, refreshToken: null });
-  },
-  logout: () => {
-    // Same as clearAuth or call logout API
-    set({ user: null, accessToken: null, refreshToken: null });
-  },
-}));
+      clearAuth: () => {
+        set({ user: null, token: null });
+        Cookies.remove('access_token');
+        Cookies.remove('refresh_token');
+      },
+
+      logout: () => {
+        set({ user: null, token: null });
+        Cookies.remove('access_token');
+        Cookies.remove('refresh_token');
+        
+      },
+
+      refreshToken: async () => {
+        try {
+          const res = await api.post('/api/token/refresh/', null, { withCredentials: true });
+
+          const accessToken = res.data?.access || Cookies.get('access_token');
+          if (accessToken) {
+            Cookies.set('access_token', accessToken, { expires: 1 / 24 });
+            set({ token: accessToken });
+          }
+
+          const userRes = await api.get('/api/auth/user/', { withCredentials: true });
+          set({ user: userRes.data });
+        } catch (error) {
+          get().logout();
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({ user: state.user, token: state.token }), // only persist these
+    }
+  )
+);

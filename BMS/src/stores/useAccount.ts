@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/hooks/use-toast'; 
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 type LoginInput = { email: string; password: string; };
 
@@ -152,29 +152,33 @@ export const useUsers = () => {
 export function useLoadCurrentUser() {
   const setUser = useAuthStore((s) => s.setUser);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const setLoading = useAuthStore((s) => s.setLoading);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
+
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     async function fetchUser() {
+      setLoading(true);
+
       try {
-        // Try to get current user with cookies sent
         const res = await api.get('/api/auth/user/', { withCredentials: true });
         setUser(res.data);
       } catch (err: any) {
         if (err.response?.status === 401) {
-          // Unauthorized: try refreshing token
-          try {
-            await api.post('/api/token/refresh/', null, { withCredentials: true });
-            // Retry fetching user again with cookies
-            const res = await api.get('/api/auth/user/', { withCredentials: true });
-            setUser(res.data);
-          } catch {
-            clearAuth();
-          }
+          // Call refreshToken when unauthorized
+          await refreshToken();
         } else {
           clearAuth();
         }
+      } finally {
+        setLoading(false);
       }
     }
+
     fetchUser();
-  }, [setUser, clearAuth]);
+  }, [setUser, clearAuth, setLoading, refreshToken]);
 }
