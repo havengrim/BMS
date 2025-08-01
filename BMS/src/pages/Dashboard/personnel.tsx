@@ -187,6 +187,7 @@ const PersonnelForm = React.memo(
               <SelectItem value="user">User</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="staff">Barangay Official</SelectItem>
+              <SelectItem value="resident">Resident</SelectItem>
             </SelectContent>
           </Select>
         </div>

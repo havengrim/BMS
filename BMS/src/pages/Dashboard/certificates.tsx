@@ -46,7 +46,6 @@ import {
   User,
   Edit,
   Trash2,
-  HelpCircle,
 } from "lucide-react"
 
 interface CertificateRequest {
@@ -319,21 +318,7 @@ export default function Certificates() {
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                 {/* Header */}
                 <div className="px-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h1 className="text-xl font-bold tracking-tight">Certificate Requests</h1>
-                      <p className="text-muted-foreground text-md">
-                        Handle certificate requests from residents - like a digital filing system
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg">
-                      <HelpCircle className="h-4 w-4" />
-                      <div>
-                        <p className="font-medium">Simple Actions:</p>
-                        <p>👁️ View • ✏️ Edit (to update status) • 🗑️ Delete</p>
-                      </div>
-                    </div>
-                  </div>
+                  
 
                   {/* Stats Cards */}
                   <div className="grid gap-4 md:grid-cols-4 mb-6">

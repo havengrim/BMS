@@ -6,6 +6,7 @@ class Profile(models.Model):
         ('admin', 'Admin'),
         ('staff', 'Staff'),
         ('user', 'User'),
+        ('resident', 'Resident')
     ]
 
     name = models.CharField(max_length=255, default='Unknown')

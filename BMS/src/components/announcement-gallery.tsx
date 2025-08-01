@@ -11,49 +11,46 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { AnnouncementDialog } from "@/components/announcement-dialog"
 import { Calendar, Clock, MapPin, Users, Eye } from "lucide-react"
-import type { Announcement } from "@/lib/announcements-data"
+import { useAnnouncements } from "@/stores/useAnnouncements"
+import type { Announcement } from "@/stores/useAnnouncements"
 
 interface AnnouncementGalleryProps {
-  announcements: Announcement[]
   showAll?: boolean
 }
 
-const getTypeColor = (type: string) => {
-  switch (type) {
-    case "Event":
-      return "bg-blue-100 text-blue-800"
-    case "Meeting":
-      return "bg-purple-100 text-purple-800"
-    case "Notice":
-      return "bg-orange-100 text-orange-800"
-    case "Health":
-      return "bg-green-100 text-green-800"
-    case "Sports":
-      return "bg-indigo-100 text-indigo-800"
-    case "Update":
-      return "bg-cyan-100 text-cyan-800"
-    default:
-      return "bg-gray-100 text-gray-800"
-  }
-}
-
-export function AnnouncementGallery({
-  announcements,
-  showAll = false,
-}: AnnouncementGalleryProps) {
-  const [selectedAnnouncement, setSelectedAnnouncement] =
-    useState<Announcement | null>(null)
+export function AnnouncementGallery({ showAll = false }: AnnouncementGalleryProps) {
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+
+  const { data: announcements = [], isLoading, error } = useAnnouncements()
 
   const handleAnnouncementClick = (announcement: Announcement) => {
     setSelectedAnnouncement(announcement)
     setDialogOpen(true)
   }
 
+  if (isLoading) return <div>Loading announcements...</div>
+  if (error) return <div>Error loading announcements.</div>
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "published":
+        return "bg-green-100 text-green-800"
+      case "draft":
+        return "bg-yellow-100 text-yellow-800"
+      case "archived":
+        return "bg-gray-100 text-gray-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {announcements.map((announcement, index) => {
+        {announcements
+          .filter((announcement) => announcement.status === "published")
+          .map((announcement, index) => {
           const isLarge = !showAll && index === 0
           const isMedium = !showAll && (index === 1 || index === 2)
 
@@ -70,37 +67,38 @@ export function AnnouncementGallery({
               onClick={() => handleAnnouncementClick(announcement)}
             >
               {isLarge ? (
-                // Large card
                 <div className="relative h-full min-h-[360px]">
-                  <img
-                    src={announcement.image || "/placeholder.svg"}
+                 <img
+                    src={
+                      announcement.image
+                        ? `${import.meta.env.VITE_API_URL}${announcement.image}`
+                        : "/placeholder.svg"
+                    }
                     alt={announcement.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 z-10" />
 
-                  {/* Badges & eye icon */}
                   <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-20">
-                    <Badge className={`${getTypeColor(announcement.type)} shadow-lg`}>
-                      {announcement.type}
+                    <Badge className={`${getStatusColor(announcement.status)} shadow-lg`}>
+                      {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}
                     </Badge>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2 shadow-lg">
                       <Eye className="h-4 w-4 text-gray-700" />
                     </div>
                   </div>
 
-                  {/* Bottom overlay */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-4 text-white/90 text-sm">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
-                          <span>{announcement.date}</span>
+                          <span>{new Date(announcement.start_date).toLocaleDateString()}</span>
                         </div>
-                        {announcement.time && (
+                        {announcement.end_date && (
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
-                            <span>{announcement.time}</span>
+                            <span>{new Date(announcement.end_date).toLocaleDateString()}</span>
                           </div>
                         )}
                       </div>
@@ -120,10 +118,10 @@ export function AnnouncementGallery({
                             <span className="line-clamp-1">{announcement.location}</span>
                           </div>
                         )}
-                        {announcement.attendees && (
+                        {announcement.target_audience && (
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            <span className="line-clamp-1">{announcement.attendees}</span>
+                            <span className="line-clamp-1">{announcement.target_audience}</span>
                           </div>
                         )}
                       </div>
@@ -138,7 +136,6 @@ export function AnnouncementGallery({
                   </div>
                 </div>
               ) : (
-                // Standard card
                 <>
                   <div
                     className={`relative overflow-hidden ${
@@ -146,15 +143,19 @@ export function AnnouncementGallery({
                     }`}
                   >
                     <img
-                      src={announcement.image || "/placeholder.svg"}
+                      src={
+                      announcement.image
+                        ? `${import.meta.env.VITE_API_URL}${announcement.image}`
+                          : "/placeholder.svg"
+                      }
                       alt={announcement.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
                     <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-                      <Badge className={getTypeColor(announcement.type)}>
-                        {announcement.type}
+                      <Badge className={getStatusColor(announcement.status)}>
+                        {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}
                       </Badge>
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
                         <Eye className="h-4 w-4 text-gray-700" />
@@ -164,7 +165,7 @@ export function AnnouncementGallery({
                     <div className="absolute bottom-4 left-4 right-4 text-white">
                       <div className="flex items-center gap-2 text-sm mb-1">
                         <Calendar className="h-4 w-4" />
-                        <span>{announcement.date}</span>
+                        <span>{new Date(announcement.start_date).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
@@ -186,10 +187,10 @@ export function AnnouncementGallery({
 
                   <CardContent className="pt-1">
                     <div className="space-y-1 text-sm text-muted-foreground">
-                      {announcement.time && (
+                      {announcement.end_date && (
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
-                          <span>{announcement.time}</span>
+                          <span>{new Date(announcement.end_date).toLocaleDateString()}</span>
                         </div>
                       )}
                       {announcement.location && (
@@ -198,10 +199,10 @@ export function AnnouncementGallery({
                           <span className="line-clamp-1">{announcement.location}</span>
                         </div>
                       )}
-                      {announcement.attendees && (
+                      {announcement.target_audience && (
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4" />
-                          <span className="line-clamp-1">{announcement.attendees}</span>
+                          <span className="line-clamp-1">{announcement.target_audience}</span>
                         </div>
                       )}
                     </div>

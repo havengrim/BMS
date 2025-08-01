@@ -1,12 +1,12 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Announcement
 from .serializers import AnnouncementSerializer
 
 @api_view(['POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([AllowAny])
 def create_announcement(request):
     serializer = AnnouncementSerializer(data=request.data)
     if serializer.is_valid():
@@ -33,7 +33,7 @@ def get_announcement(request, pk):
     return Response(serializer.data)
 
 @api_view(['PUT', 'PATCH'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAuthenticated])
 def edit_announcement(request, pk):
     try:
         announcement = Announcement.objects.get(pk=pk)
@@ -47,7 +47,7 @@ def edit_announcement(request, pk):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAuthenticated])
 def delete_announcement(request, pk):
     try:
         announcement = Announcement.objects.get(pk=pk)
