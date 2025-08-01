@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -81,7 +81,19 @@ CORS_ALLOW_CREDENTIALS = True
 SESSION_COOKIE_SECURE = False 
 CSRF_COOKIE_SECURE = False 
 ROOT_URLCONF = 'backend.urls'
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 
+    # Use cookies
+    "AUTH_COOKIE": "refresh_token",  # Cookie name
+    "AUTH_COOKIE_SECURE": False,     # True in production (HTTPS)
+    "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_PATH": "/",         # Send on all requests
+    "AUTH_COOKIE_SAMESITE": "Lax",   # Adjust for cross-site if needed
+}
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

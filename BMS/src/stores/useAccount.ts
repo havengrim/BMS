@@ -52,6 +52,12 @@ type UserProfile = {
 };
 
 export type User = {
+  image: string;
+  position: string;
+  address: string;
+  dateOfBirth: string;
+  civilStatus: string;
+  name: string;
   id: number;
   username: string;
   email: string;
@@ -144,7 +150,7 @@ export const useRegister = (): UseMutationResult<RegisterResponse, Error, Regist
 export const useUsers = () => {
   return useQuery<User[], Error>({
     queryKey: ['users'],
-    queryFn: () => api.get('/api/users/').then(res => res.data),
+    queryFn: () => api.get('/api/users/', { withCredentials: true }).then(res => res.data),
     staleTime: 1000 * 60 * 5,
   });
 };

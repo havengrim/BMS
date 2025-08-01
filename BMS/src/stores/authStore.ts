@@ -40,19 +40,18 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: async () => {
         try {
           const res = await api.post('/api/token/refresh/', null, { withCredentials: true });
-
           const accessToken = res.data?.access || Cookies.get('access_token');
           if (accessToken) {
             Cookies.set('access_token', accessToken, { expires: 1 / 24 });
             set({ token: accessToken });
           }
-
           const userRes = await api.get('/api/auth/user/', { withCredentials: true });
           set({ user: userRes.data });
         } catch (error) {
           get().logout();
         }
       },
+
     }),
     {
       name: 'auth-storage',

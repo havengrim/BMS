@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef } from "react"
+import React, { useState, useRef, useCallback, useMemo } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -18,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -35,13 +32,29 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Plus, Eye, Edit, Trash2, Search, Users, Upload, ChevronLeft, ChevronRight } from "lucide-react"
+import { Eye, Edit, Trash2, Search, Users, Upload, ChevronLeft, ChevronRight } from "lucide-react"
+import { useUsers, useUpdateUser, useDeleteUser } from "@/stores/useUsers"
+
+interface User {
+  id: number
+  username: string
+  email: string
+  profile: {
+    name: string
+    contact_number: string
+    address: string
+    civil_status: string
+    birthdate: string
+    role: string
+    image: string | null
+  }
+}
 
 interface Personnel {
   id: string
   name: string
   email: string
-  password: string
+  contactNumber: string
   dateOfBirth: string
   civilStatus: string
   address: string
@@ -49,343 +62,366 @@ interface Personnel {
   position?: string
 }
 
-const initialPersonnel: Personnel[] = [
-  {
-    id: "1",
-    name: "Juan Dela Cruz",
-    email: "juan.delacruz@sindalan.gov.ph",
-    password: "password123",
-    dateOfBirth: "1980-05-15",
-    civilStatus: "Married",
-    address: "123 Main Street, Sindalan, San Fernando, Pampanga",
-    image: "/placeholder.svg?height=100&width=100",
-    position: "Barangay Captain",
+const mapUserToPersonnel = (user: User): Personnel => ({
+  id: user.id.toString(),
+  name: user.profile?.name || "Unknown",
+  email: user.email || "",
+  contactNumber: user.profile?.contact_number || "",
+  dateOfBirth: user.profile?.birthdate || "1970-01-01",
+  civilStatus: user.profile?.civil_status
+    ? user.profile.civil_status.charAt(0).toUpperCase() + user.profile.civil_status.slice(1).toLowerCase()
+    : "Single",
+  address: user.profile?.address || "Unknown",
+  image: user.profile?.image || "/placeholder.svg?height=100&width=100",
+  position: user.profile?.role || "Staff",
+})
+
+const PersonnelForm = React.memo(
+  ({
+    formData,
+    setFormData,
+    imagePreview,
+    setImagePreview,
+    setImageFile,
+    fileInputRef,
+    nameInputRef,
+  }: {
+    formData: Partial<Personnel>
+    setFormData: React.Dispatch<React.SetStateAction<Partial<Personnel>>>
+    imagePreview: string | null
+    setImagePreview: React.Dispatch<React.SetStateAction<string | null>>
+    imageFile: File | null
+    setImageFile: React.Dispatch<React.SetStateAction<File | null>>
+    fileInputRef: React.RefObject<HTMLInputElement | null>
+    nameInputRef: React.RefObject<HTMLInputElement | null>
+  }) => {
+    console.log("PersonnelForm rendered")
+    return (
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="name" className="text-right">
+            Name
+          </Label>
+          <Input
+            id="name"
+            ref={nameInputRef}
+            value={formData.name || ""}
+            onChange={(e) => {
+              console.log("Name input changed, focused:", document.activeElement === nameInputRef.current)
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }}
+            onFocus={() => console.log("Name input focused")}
+            onBlur={() => console.log("Name input blurred")}
+            className="col-span-3"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="email" className="text-right">
+            Email
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email || ""}
+            onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+            className="col-span-3"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="contactNumber" className="text-left">
+            Contact Number
+          </Label>
+          <Input
+            id="contactNumber"
+            value={formData.contactNumber || ""}
+            onChange={(e) => setFormData((prev) => ({ ...prev, contactNumber: e.target.value }))}
+            className="col-span-3"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="dateOfBirth" className="text-right">
+            Date of Birth
+          </Label>
+          <Input
+            id="dateOfBirth"
+            type="date"
+            value={formData.dateOfBirth || ""}
+            onChange={(e) => setFormData((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
+            className="col-span-3 block"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="civilStatus" className="text-right">
+            Civil Status
+          </Label>
+          <div>
+
+            <Select
+              value={formData.civilStatus || ""}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, civilStatus: value }))}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select civil status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Single">Single</SelectItem>
+                <SelectItem value="Married">Married</SelectItem>
+                <SelectItem value="Divorced">Divorced</SelectItem>
+                <SelectItem value="Widowed">Widowed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="position" className="text-right">
+            Role
+          </Label>
+          <Select
+            value={formData.position || ""}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, position: value }))}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">User</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="staff">Barangay Official</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="address" className="text-right">
+            Address
+          </Label>
+          <Textarea
+            id="address"
+            value={formData.address || ""}
+            onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+            className="col-span-3"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="image" className="text-right">
+            Photo
+          </Label>
+          <div className="col-span-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setImageFile(file)
+                    const reader = new FileReader()
+                    reader.onloadend = () => {
+                      setImagePreview(reader.result as string)
+                    }
+                    reader.readAsDataURL(file)
+                  }
+                }}
+                ref={fileInputRef}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Upload Photo
+              </Button>
+            </div>
+            {imagePreview && (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={imagePreview || "/placeholder.svg"} alt="Preview" />
+                  <AvatarFallback>Preview</AvatarFallback>
+                </Avatar>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setImagePreview(null)
+                    setImageFile(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ""
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
   },
-  {
-    id: "2",
-    name: "Maria Santos",
-    email: "maria.santos@sindalan.gov.ph",
-    password: "password123",
-    dateOfBirth: "1985-08-22",
-    civilStatus: "Single",
-    address: "456 Oak Avenue, Sindalan, San Fernando, Pampanga",
-    image: "/placeholder.svg?height=100&width=100",
-    position: "Barangay Secretary",
-  },
-  {
-    id: "3",
-    name: "Pedro Rodriguez",
-    email: "pedro.rodriguez@sindalan.gov.ph",
-    password: "password123",
-    dateOfBirth: "1978-12-10",
-    civilStatus: "Married",
-    address: "789 Pine Road, Sindalan, San Fernando, Pampanga",
-    image: "/placeholder.svg?height=100&width=100",
-    position: "Barangay Treasurer",
-  },
-  {
-    id: "4",
-    name: "Ana Garcia",
-    email: "ana.garcia@sindalan.gov.ph",
-    password: "password123",
-    dateOfBirth: "1990-03-18",
-    civilStatus: "Single",
-    address: "321 Elm Street, Sindalan, San Fernando, Pampanga",
-    image: "/placeholder.svg?height=100&width=100",
-    position: "Barangay Clerk",
-  },
-  {
-    id: "5",
-    name: "Carlos Mendoza",
-    email: "carlos.mendoza@sindalan.gov.ph",
-    password: "password123",
-    dateOfBirth: "1982-07-25",
-    civilStatus: "Married",
-    address: "654 Maple Drive, Sindalan, San Fernando, Pampanga",
-    image: "/placeholder.svg?height=100&width=100",
-    position: "Barangay Councilor",
-  },
-  {
-    id: "6",
-    name: "Rosa Fernandez",
-    email: "rosa.fernandez@sindalan.gov.ph",
-    password: "password123",
-    dateOfBirth: "1987-11-12",
-    civilStatus: "Divorced",
-    address: "987 Cedar Lane, Sindalan, San Fernando, Pampanga",
-    image: "/placeholder.svg?height=100&width=100",
-    position: "Health Worker",
-  },
-  {
-    id: "7",
-    name: "Miguel Torres",
-    email: "miguel.torres@sindalan.gov.ph",
-    password: "password123",
-    dateOfBirth: "1975-09-30",
-    civilStatus: "Married",
-    address: "147 Birch Avenue, Sindalan, San Fernando, Pampanga",
-    image: "/placeholder.svg?height=100&width=100",
-    position: "Security Officer",
-  },
-  {
-    id: "8",
-    name: "Elena Reyes",
-    email: "elena.reyes@sindalan.gov.ph",
-    password: "password123",
-    dateOfBirth: "1992-01-08",
-    civilStatus: "Single",
-    address: "258 Willow Street, Sindalan, San Fernando, Pampanga",
-    image: "/placeholder.svg?height=100&width=100",
-    position: "Social Worker",
-  },
-]
+)
 
 export default function Personnel() {
-  const [personnel, setPersonnel] = useState<Personnel[]>(initialPersonnel)
+  const { data: users, isLoading, isError } = useUsers()
+  const updateUser = useUpdateUser()
+  const deleteUser = useDeleteUser()
+  const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [formData, setFormData] = useState<Partial<Personnel>>({})
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Pagination state
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const nameInputRef = useRef<HTMLInputElement | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
 
-  const filteredPersonnel = personnel.filter(
-    (person) =>
-      person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      person.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      person.position?.toLowerCase().includes(searchTerm.toLowerCase()),
+  React.useEffect(() => {
+    if (users && !isLoading && !isError) {
+      const mappedPersonnel = users.map(mapUserToPersonnel)
+      setPersonnel(mappedPersonnel)
+    }
+  }, [users, isLoading, isError])
+
+  const filteredPersonnel = useMemo(
+    () =>
+      personnel.filter(
+        (person) =>
+          person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          person.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          person.position?.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    [personnel, searchTerm],
   )
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredPersonnel.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const currentPersonnel = filteredPersonnel.slice(startIndex, endIndex)
+  const currentPersonnel = useMemo(
+    () => filteredPersonnel.slice(startIndex, endIndex),
+    [filteredPersonnel, startIndex, endIndex],
+  )
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
-  }
+  }, [])
 
-  const handleItemsPerPageChange = (value: string) => {
+  const handleItemsPerPageChange = useCallback((value: string) => {
     setItemsPerPage(Number.parseInt(value))
-    setCurrentPage(1) // Reset to first page when changing items per page
-  }
+    setCurrentPage(1)
+  }, [])
 
-  const handleAdd = () => {
-    setFormData({})
-    setImagePreview(null)
-    setIsAddDialogOpen(true)
-  }
-
-  const handleEdit = (person: Personnel) => {
+  const handleEdit = useCallback((person: Personnel) => {
     setSelectedPersonnel(person)
     setFormData(person)
     setImagePreview(person.image || null)
+    setImageFile(null)
     setIsEditDialogOpen(true)
-  }
+    setTimeout(() => nameInputRef.current?.focus(), 0)
+  }, [])
 
-  const handleView = (person: Personnel) => {
+  const handleView = useCallback((person: Personnel) => {
     setSelectedPersonnel(person)
     setIsViewDialogOpen(true)
-  }
+  }, [])
 
-  const handleDelete = (id: string) => {
-    setPersonnel(personnel.filter((person) => person.id !== id))
-    // Adjust current page if necessary
-    const newFilteredLength = personnel.filter((person) => person.id !== id).length
-    const newTotalPages = Math.ceil(newFilteredLength / itemsPerPage)
-    if (currentPage > newTotalPages && newTotalPages > 0) {
-      setCurrentPage(newTotalPages)
-    }
-  }
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setImagePreview(result)
-        setFormData({ ...formData, image: result })
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await deleteUser.mutateAsync(Number(id))
+        setPersonnel((prev) => prev.filter((person) => person.id !== id))
+        const newFilteredLength = filteredPersonnel.length - 1
+        const newTotalPages = Math.ceil(newFilteredLength / itemsPerPage)
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(newTotalPages)
+        }
+      } catch (error) {
+        console.error("Failed to delete user:", error)
       }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleSave = () => {
-    if (selectedPersonnel) {
-      // Edit existing personnel
-      setPersonnel(
-        personnel.map((person) => (person.id === selectedPersonnel.id ? { ...person, ...formData } : person)),
-      )
-      setIsEditDialogOpen(false)
-    } else {
-      // Add new personnel
-      const newPersonnel: Personnel = {
-        id: Date.now().toString(),
-        name: formData.name || "",
-        email: formData.email || "",
-        password: formData.password || "",
-        dateOfBirth: formData.dateOfBirth || "",
-        civilStatus: formData.civilStatus || "",
-        address: formData.address || "",
-        image: formData.image || "/placeholder.svg?height=100&width=100",
-        position: formData.position || "",
-      }
-      setPersonnel([...personnel, newPersonnel])
-      setIsAddDialogOpen(false)
-    }
-    setFormData({})
-    setSelectedPersonnel(null)
-    setImagePreview(null)
-  }
-
-  const PersonnelForm = () => (
-    <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="name" className="text-right">
-          Name
-        </Label>
-        <Input
-          id="name"
-          value={formData.name || ""}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="col-span-3"
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="email" className="text-right">
-          Email
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email || ""}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="col-span-3"
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="password" className="text-right">
-          Password
-        </Label>
-        <Input
-          id="password"
-          type="password"
-          value={formData.password || ""}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          className="col-span-3"
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="dateOfBirth" className="text-right">
-          Date of Birth
-        </Label>
-        <Input
-          id="dateOfBirth"
-          type="date"
-          value={formData.dateOfBirth || ""}
-          onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-          className="col-span-3"
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="civilStatus" className="text-right">
-          Civil Status
-        </Label>
-        <Select
-          value={formData.civilStatus || ""}
-          onValueChange={(value) => setFormData({ ...formData, civilStatus: value })}
-        >
-          <SelectTrigger className="col-span-3">
-            <SelectValue placeholder="Select civil status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Single">Single</SelectItem>
-            <SelectItem value="Married">Married</SelectItem>
-            <SelectItem value="Divorced">Divorced</SelectItem>
-            <SelectItem value="Widowed">Widowed</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="position" className="text-right">
-          Position
-        </Label>
-        <Input
-          id="position"
-          value={formData.position || ""}
-          onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-          className="col-span-3"
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="address" className="text-right">
-          Address
-        </Label>
-        <Textarea
-          id="address"
-          value={formData.address || ""}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-          className="col-span-3"
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="image" className="text-right">
-          Photo
-        </Label>
-        <div className="col-span-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <Input
-              id="image"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              ref={fileInputRef}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Upload Photo
-            </Button>
-          </div>
-          {imagePreview && (
-            <div className="flex items-center gap-2">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={imagePreview || "/placeholder.svg"} alt="Preview" />
-                <AvatarFallback>Preview</AvatarFallback>
-              </Avatar>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setImagePreview(null)
-                  setFormData({ ...formData, image: "" })
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = ""
-                  }
-                }}
-              >
-                Remove
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    },
+    [deleteUser, filteredPersonnel, currentPage, itemsPerPage],
   )
+
+  const handleSave = useCallback(
+    async () => {
+      if (!selectedPersonnel) return
+
+      const formPayload = new FormData()
+      formPayload.append("email", formData.email || "")
+      formPayload.append("profile.name", formData.name || "")
+      formPayload.append("profile.contact_number", formData.contactNumber || "")
+      formPayload.append("profile.address", formData.address || "")
+      formPayload.append("profile.civil_status", (formData.civilStatus || "").toLowerCase())
+      formPayload.append("profile.birthdate", formData.dateOfBirth || "")
+      formPayload.append("profile.role", formData.position || "")
+      if (imageFile) {
+        formPayload.append("profile.image", imageFile)
+      }
+
+      try {
+        await updateUser.mutateAsync({ id: Number(selectedPersonnel.id), data: formPayload })
+        setPersonnel((prev) =>
+          prev.map((person) =>
+            person.id === selectedPersonnel.id
+              ? { ...person, ...formData, image: imageFile ? URL.createObjectURL(imageFile) : person.image }
+              : person,
+          ),
+        )
+        setIsEditDialogOpen(false)
+      } catch (error) {
+        console.error("Failed to update user:", error)
+      }
+
+      setFormData({})
+      setSelectedPersonnel(null)
+      setImagePreview(null)
+      setImageFile(null)
+    },
+    [selectedPersonnel, formData, imageFile, updateUser],
+  )
+
+  const formProps = useMemo(
+    () => ({
+      formData,
+      setFormData,
+      imagePreview,
+      setImagePreview,
+      imageFile,
+      setImageFile,
+      fileInputRef,
+      nameInputRef,
+    }),
+    [formData, imagePreview, imageFile],
+  )
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Loading personnel data...</p>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>
+          Unauthorized access. <a href="/login">Please log in</a>.
+        </p>
+      </div>
+    )
+  }
+
+  if (personnel.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>No personnel data available.</p>
+      </div>
+    )
+  }
 
   return (
     <SidebarProvider
@@ -408,26 +444,6 @@ export default function Personnel() {
                   <h1 className="text-xl font-bold tracking-tight">Personnel Management</h1>
                   <p className="text-muted-foreground text-md">Manage barangay personnel information and access</p>
                 </div>
-                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={handleAdd}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Personnel
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Add New Personnel</DialogTitle>
-                      <DialogDescription>Add a new personnel member to the barangay system.</DialogDescription>
-                    </DialogHeader>
-                    <PersonnelForm />
-                    <DialogFooter>
-                      <Button type="submit" onClick={handleSave}>
-                        Add Personnel
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
               </div>
 
               {/* Stats Cards */}
@@ -444,24 +460,12 @@ export default function Personnel() {
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Officials</CardTitle>
+                    <CardTitle className="text-sm font-medium">Barangay Official</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {personnel.filter((p) => p.position?.includes("Barangay")).length}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Barangay officials</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Staff</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {personnel.filter((p) => !p.position?.includes("Barangay")).length}
+                      {personnel.filter((p) => !p.position?.includes("Admin")).length}
                     </div>
                     <p className="text-xs text-muted-foreground">Support staff</p>
                   </CardContent>
@@ -497,7 +501,7 @@ export default function Personnel() {
                 </div>
               </div>
 
-              <div className="">
+              <div>
                 <Card className="!p-0 border-none shadow-none">
                   <CardHeader>
                     <CardTitle>Personnel List</CardTitle>
@@ -512,9 +516,10 @@ export default function Personnel() {
                         <TableRow>
                           <TableHead>Photo</TableHead>
                           <TableHead>Name</TableHead>
-                          <TableHead>Position</TableHead>
+                          <TableHead>Role</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Civil Status</TableHead>
+                          <TableHead>Contact Number</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -538,6 +543,7 @@ export default function Personnel() {
                             </TableCell>
                             <TableCell>{person.email}</TableCell>
                             <TableCell>{person.civilStatus}</TableCell>
+                            <TableCell>{person.contactNumber}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Button variant="outline" size="sm" onClick={() => handleView(person)}>
@@ -562,8 +568,11 @@ export default function Personnel() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDelete(person.id)}>
-                                        Delete
+                                      <AlertDialogAction
+                                        onClick={() => handleDelete(person.id)}
+                                        disabled={deleteUser.isPending}
+                                      >
+                                        {deleteUser.isPending ? "Deleting..." : "Delete"}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -623,10 +632,10 @@ export default function Personnel() {
                     <DialogTitle>Edit Personnel</DialogTitle>
                     <DialogDescription>Make changes to the personnel information here.</DialogDescription>
                   </DialogHeader>
-                  <PersonnelForm />
+                  <PersonnelForm {...formProps} />
                   <DialogFooter>
-                    <Button type="submit" onClick={handleSave}>
-                      Save Changes
+                    <Button type="submit" onClick={handleSave} disabled={updateUser.isPending}>
+                      {updateUser.isPending ? "Saving..." : "Save Changes"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -643,10 +652,7 @@ export default function Personnel() {
                     <div className="grid gap-4 py-4">
                       <div className="flex items-center justify-center">
                         <Avatar className="h-20 w-20">
-                          <AvatarImage
-                            src={selectedPersonnel.image || "/placeholder.svg"}
-                            alt={selectedPersonnel.name}
-                          />
+                          <AvatarImage src={selectedPersonnel.image || "/placeholder.svg"} alt={selectedPersonnel.name} />
                           <AvatarFallback className="text-lg">
                             {selectedPersonnel.name
                               .split(" ")
@@ -670,10 +676,12 @@ export default function Personnel() {
                         <span className="col-span-2">{selectedPersonnel.email}</span>
                       </div>
                       <div className="grid grid-cols-3 items-center gap-4">
+                        <Label className="font-semibold">Contact Number:</Label>
+                        <span className="col-span-2">{selectedPersonnel.contactNumber}</span>
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
                         <Label className="font-semibold">Date of Birth:</Label>
-                        <span className="col-span-2">
-                          {new Date(selectedPersonnel.dateOfBirth).toLocaleDateString()}
-                        </span>
+                        <span className="col-span-2">{new Date(selectedPersonnel.dateOfBirth).toLocaleDateString()}</span>
                       </div>
                       <div className="grid grid-cols-3 items-center gap-4">
                         <Label className="font-semibold">Civil Status:</Label>

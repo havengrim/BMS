@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .serializer import RegisterSerializer, UserSerializer, CustomTokenObtainPairSerializer
 from django.views.decorators.csrf import csrf_exempt
-
+from rest_framework.parsers import MultiPartParser, FormParser
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -24,9 +24,8 @@ def register(request):
 @permission_classes([IsAuthenticated])
 def get_all_users(request):
     users = User.objects.all()
-    serializer = UserSerializer(users, many=True)
+    serializer = UserSerializer(users, many=True, context={'request': request})  # pass request here
     return Response(serializer.data)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -52,6 +51,7 @@ def current_user(request):
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
 def user_detail(request, user_id):
     try:
         user = User.objects.get(pk=user_id)
@@ -59,11 +59,11 @@ def user_detail(request, user_id):
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        serializer = UserSerializer(user)
+        serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})  # add context here
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "User updated successfully", "user": serializer.data})
@@ -72,8 +72,6 @@ def user_detail(request, user_id):
     elif request.method == 'DELETE':
         user.delete()
         return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-
-
 class CustomEmailLoginView(APIView):
     permission_classes = [AllowAny]
 

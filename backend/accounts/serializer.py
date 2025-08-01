@@ -69,19 +69,58 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(read_only=True)
+    image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Profile
-        fields = ['contact_number', 'address', 'civil_status', 'birthdate', 'role', 'image']
+        fields = [
+            'name',
+            'contact_number',
+            'address',
+            'civil_status',
+            'birthdate',
+            'role',
+            'image',
+        ]
+
+    def to_internal_value(self, data):
+        # This enables updating nested fields including image from nested dict
+        ret = super().to_internal_value(data)
+        return ret
 
 
 class UserSerializer(serializers.ModelSerializer):
-    profile = ProfileSerializer(read_only=True)
+    profile = ProfileSerializer()
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'profile']
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        profile = instance.profile
+
+        # Update user fields
+        instance.username = validated_data.get('username', instance.username)
+        instance.email = validated_data.get('email', instance.email)
+        instance.save()
+
+        # Update profile fields
+        profile.name = profile_data.get('name', profile.name)
+        profile.contact_number = profile_data.get('contact_number', profile.contact_number)
+        profile.address = profile_data.get('address', profile.address)
+        profile.civil_status = profile_data.get('civil_status', profile.civil_status)
+        profile.birthdate = profile_data.get('birthdate', profile.birthdate)
+        profile.role = profile_data.get('role', profile.role)
+
+        # **Handle image update:**
+        image = profile_data.get('image', None)
+        if image:
+            profile.image = image
+
+        profile.save()
+        return instance
+
 
 
 class CustomTokenObtainPairSerializer(serializers.Serializer):

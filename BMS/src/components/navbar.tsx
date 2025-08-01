@@ -137,7 +137,14 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="cursor-pointer h-8 w-8 hidden md:flex">
-                    <AvatarImage src={user.profile.image || undefined} alt={user.username} />
+                    <AvatarImage
+                      src={
+                        user?.profile?.image
+                          ? `${import.meta.env.VITE_API_URL}${user.profile.image}`
+                          : undefined
+                      }
+                      alt={user?.username}
+                    />
                     <AvatarFallback className="font-semibold">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>

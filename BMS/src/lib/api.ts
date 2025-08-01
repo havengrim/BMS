@@ -24,7 +24,7 @@ api.interceptors.response.use(
       try {
         // Call refresh token endpoint — refresh token is in HttpOnly cookie
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/authentication/token/refresh/`,
+          `${import.meta.env.VITE_API_URL}/api/token/refresh/`,
           {},
           { withCredentials: true }
         );
