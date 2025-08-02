@@ -1,19 +1,38 @@
+"use client"
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 
+// Type for certificate data returned by GET requests
 export type Certificate = {
   id: number
-  name: string
-  recipient: string
   certificate_type: string
   request_number: string
-  date_issued: string
+  first_name: string
+  last_name: string
+  middle_name?: string
+  complete_address: string
+  contact_number: string
+  email_address: string
   purpose: string
-  address: string
-  issued_by: string
-  remarks: string
-  valid_until: string
+  agree_terms: boolean
+  status: string
+  created_at: string
+  user: number
+}
+
+// Type for creating a certificate (POST request)
+export type CreateCertificateInput = {
+  certificate_type: string
+  first_name: string
+  last_name: string
+  middle_name?: string
+  complete_address: string
+  contact_number: string
+  email_address: string
+  purpose: string
+  agree_terms: boolean
 }
 
 export type BusinessPermit = {
@@ -52,7 +71,7 @@ export const useCreateCertificate = () => {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: (data: Omit<Certificate, "id">) =>
+    mutationFn: (data: CreateCertificateInput) =>
       api.post("/api/certificates/create/", data, { withCredentials: true }).then(res => res.data),
     onSuccess: () => {
       toast({ title: "Created", description: "Certificate created successfully." })
@@ -70,7 +89,7 @@ export const useEditCertificate = () => {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Omit<Certificate, "id"> }) =>
+    mutationFn: ({ id, data }: { id: number; data: CreateCertificateInput }) =>
       api.put(`/api/certificates/edit/${id}/`, data, { withCredentials: true }).then(res => res.data),
     onSuccess: () => {
       toast({ title: "Updated", description: "Certificate updated successfully." })

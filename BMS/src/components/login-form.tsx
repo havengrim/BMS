@@ -72,7 +72,7 @@ export function LoginForm({
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isPending}>
+              <Button type="submit" className="w-full bg-green-900" disabled={isPending}>
                 {isPending && <Spinner className="mr-2 h-5 w-5 text-white inline-block" />}
                 {isPending ? "Logging in..." : "Login"}
               </Button>

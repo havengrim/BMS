@@ -16,6 +16,7 @@ import type { Announcement } from "@/stores/useAnnouncements"
 
 interface AnnouncementGalleryProps {
   showAll?: boolean
+  announcements?: Announcement[]
 }
 
 export function AnnouncementGallery({ showAll = false }: AnnouncementGalleryProps) {

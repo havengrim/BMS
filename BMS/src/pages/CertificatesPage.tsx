@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { FileText, Clock, CheckCircle, Package, AlertCircle } from "lucide-react"
 import { Footer } from "@/components/footer"
+import { useCertificates, useCreateCertificate, type Certificate } from "@/stores/useCertificates"
 
 const certificateTypes = [
   {
@@ -43,30 +43,6 @@ const certificateTypes = [
     description: "Required for business permit applications",
     fee: "₱100.00",
     processing: "3-5 business days",
-  },
-]
-
-// Mock user requests
-const mockRequests = [
-  {
-    id: "req-001",
-    referenceNumber: "BR-2025-001234",
-    certificateType: "Barangay Clearance",
-    dateSubmitted: "2025-01-28",
-    status: "ready",
-    estimatedCompletion: "2025-01-30",
-    fee: "₱50.00",
-    purpose: "Employment requirement",
-  },
-  {
-    id: "req-002",
-    referenceNumber: "BR-2025-001237",
-    certificateType: "Business Clearance",
-    dateSubmitted: "2025-01-26",
-    status: "processing",
-    estimatedCompletion: "2025-02-01",
-    fee: "₱100.00",
-    purpose: "Business permit application",
   },
 ]
 
@@ -118,19 +94,23 @@ const getStatusText = (status: string) => {
 export default function CertificatesPage() {
   const [selectedCertificate, setSelectedCertificate] = useState("")
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    middleName: "",
-    address: "",
-    contactNumber: "",
-    email: "",
+    first_name: "",
+    last_name: "",
+    middle_name: "",
+    complete_address: "",
+    contact_number: "",
+    email_address: "",
     purpose: "",
-    agreeToTerms: false,
+    agree_terms: false,
   })
-  const { toast } = useToast()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { toast } = useToast()
+  const { data: certificates, isLoading, error } = useCertificates()
+  const createCertificate = useCreateCertificate()
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!selectedCertificate) {
       toast({
         title: "Please select a certificate type",
@@ -138,7 +118,7 @@ export default function CertificatesPage() {
       })
       return
     }
-    if (!formData.agreeToTerms) {
+    if (!formData.agree_terms) {
       toast({
         title: "Please agree to the terms and conditions",
         variant: "destructive",
@@ -146,26 +126,41 @@ export default function CertificatesPage() {
       return
     }
 
-    // Generate new reference number
-    const newRefNumber = `BR-2025-${String(Date.now()).slice(-6)}`
+    const certificateData = {
+      certificate_type: certificateTypes.find(cert => cert.id === selectedCertificate)?.name || "",
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      middle_name: formData.middle_name,
+      complete_address: formData.complete_address,
+      contact_number: formData.contact_number,
+      email_address: formData.email_address,
+      purpose: formData.purpose,
+      agree_terms: formData.agree_terms,
+    }
 
-    toast({
-      title: "Request submitted successfully!",
-      description: `Your reference number is: ${newRefNumber}`,
-    })
-
-    // Reset form
-    setSelectedCertificate("")
-    setFormData({
-      firstName: "",
-      lastName: "",
-      middleName: "",
-      address: "",
-      contactNumber: "",
-      email: "",
-      purpose: "",
-      agreeToTerms: false,
-    })
+    try {
+      await createCertificate.mutateAsync(certificateData)
+      toast({
+        title: "Certificate request submitted successfully",
+      })
+      setSelectedCertificate("")
+      setFormData({
+        first_name: "",
+        last_name: "",
+        middle_name: "",
+        complete_address: "",
+        contact_number: "",
+        email_address: "",
+        purpose: "",
+        agree_terms: false,
+      })
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to submit certificate request.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -186,7 +181,7 @@ export default function CertificatesPage() {
             </TabsTrigger>
             <TabsTrigger value="track" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              My Requests ({mockRequests.length})
+              My Requests ({certificates?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -234,59 +229,59 @@ export default function CertificatesPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="firstName">First Name *</Label>
+                          <Label htmlFor="first_name">First Name *</Label>
                           <Input
-                            id="firstName"
-                            value={formData.firstName}
-                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                            id="first_name"
+                            value={formData.first_name}
+                            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                             required
                           />
                         </div>
                         <div>
-                          <Label htmlFor="lastName">Last Name *</Label>
+                          <Label htmlFor="last_name">Last Name *</Label>
                           <Input
-                            id="lastName"
-                            value={formData.lastName}
-                            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                            id="last_name"
+                            value={formData.last_name}
+                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                             required
                           />
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="middleName">Middle Name</Label>
+                        <Label htmlFor="middle_name">Middle Name</Label>
                         <Input
-                          id="middleName"
-                          value={formData.middleName}
-                          onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                          id="middle_name"
+                          value={formData.middle_name}
+                          onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
                         />
                       </div>
                       <div>
-                        <Label htmlFor="address">Complete Address *</Label>
+                        <Label htmlFor="complete_address">Complete Address *</Label>
                         <Textarea
-                          id="address"
-                          value={formData.address}
-                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          id="complete_address"
+                          value={formData.complete_address}
+                          onChange={(e) => setFormData({ ...formData, complete_address: e.target.value })}
                           required
                         />
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="contactNumber">Contact Number *</Label>
+                          <Label htmlFor="contact_number">Contact Number *</Label>
                           <Input
-                            id="contactNumber"
+                            id="contact_number"
                             type="tel"
-                            value={formData.contactNumber}
-                            onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                            value={formData.contact_number}
+                            onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
                             required
                           />
                         </div>
                         <div>
-                          <Label htmlFor="email">Email Address *</Label>
+                          <Label htmlFor="email_address">Email Address *</Label>
                           <Input
-                            id="email"
+                            id="email_address"
                             type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            value={formData.email_address}
+                            onChange={(e) => setFormData({ ...formData, email_address: e.target.value })}
                             required
                           />
                         </div>
@@ -303,18 +298,21 @@ export default function CertificatesPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
-                          id="terms"
-                          checked={formData.agreeToTerms}
-                          onCheckedChange={(checked) => setFormData({ ...formData, agreeToTerms: checked as boolean })}
+                          id="agree_terms"
+                          checked={formData.agree_terms}
+                          onCheckedChange={(checked) => setFormData({ ...formData, agree_terms: checked as boolean })}
                         />
-                        <Label htmlFor="terms" className="text-sm">
-                          I agree to the terms and conditions and certify that all information provided is true and
-                          correct.
+                        <Label htmlFor="agree_terms" className="text-sm">
+                          I agree to the terms and conditions and certify that all information provided is true and correct.
                         </Label>
                       </div>
-                      <Button type="submit" className="w-full" disabled={!selectedCertificate}>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={!selectedCertificate || createCertificate.isPending}
+                      >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Submit Request
+                        {createCertificate.isPending ? "Submitting..." : "Submit Request"}
                       </Button>
                     </form>
                   </CardContent>
@@ -324,20 +322,26 @@ export default function CertificatesPage() {
           </TabsContent>
 
           <TabsContent value="track">
-            <div className=" mx-auto">
+            <div className="mx-auto">
               <div className="mb-6">
                 <h2 className="text-2xl font-bold mb-2">My Certificate Requests</h2>
                 <p className="text-muted-foreground">View all your certificate requests and their current status</p>
               </div>
 
+              {isLoading && <p>Loading requests...</p>}
+              {error && <p className="text-destructive">Failed to load requests: {error.message}</p>}
+              {!isLoading && !error && certificates?.length === 0 && (
+                <p className="text-muted-foreground">No certificate requests found.</p>
+              )}
+
               <div className="space-y-4">
-                {mockRequests.map((request) => (
+                {certificates?.map((request: Certificate) => (
                   <Card key={request.id}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
-                          <CardTitle className="text-lg">{request.certificateType}</CardTitle>
-                          <CardDescription>Reference: {request.referenceNumber}</CardDescription>
+                          <CardTitle className="text-lg">{request.certificate_type}</CardTitle>
+                          <CardDescription>Reference: {request.request_number}</CardDescription>
                         </div>
                         <Badge className={`${getStatusColor(request.status)} flex items-center gap-1`}>
                           {getStatusIcon(request.status)}
@@ -349,15 +353,19 @@ export default function CertificatesPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <Label className="text-sm font-medium text-muted-foreground">Date Submitted</Label>
-                          <p className="font-medium">{new Date(request.dateSubmitted).toLocaleDateString()}</p>
+                          <p className="font-medium">{new Date(request.created_at).toLocaleDateString()}</p>
                         </div>
                         <div>
                           <Label className="text-sm font-medium text-muted-foreground">Estimated Completion</Label>
-                          <p className="font-medium">{new Date(request.estimatedCompletion).toLocaleDateString()}</p>
+                          <p className="font-medium">
+                            {certificateTypes.find((cert) => cert.name === request.certificate_type)?.processing || "Unknown"}
+                          </p>
                         </div>
                         <div>
                           <Label className="text-sm font-medium text-muted-foreground">Fee</Label>
-                          <p className="font-medium">{request.fee}</p>
+                          <p className="font-medium">
+                            {certificateTypes.find((cert) => cert.name === request.certificate_type)?.fee || "Unknown"}
+                          </p>
                         </div>
                       </div>
                       <div className="mt-4">

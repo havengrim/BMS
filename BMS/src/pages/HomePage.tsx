@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Navbar } from "@/components/navbar"
 import {
@@ -23,7 +29,6 @@ import {
   Mail,
 } from "lucide-react"
 import { AnnouncementGallery } from "@/components/announcement-gallery"
-import { announcements } from "@/lib/announcements-data"
 import images from "@/assets/images"
 import { Footer } from "@/components/footer"
 
@@ -245,7 +250,9 @@ export default function HomePage() {
               <Link to="/announcements">View All</Link>
             </Button>
           </div>
-          <AnnouncementGallery announcements={announcements.slice(0, 6)} />
+
+          {/* AnnouncementGallery fetches announcements internally */}
+          <AnnouncementGallery showAll={false} />
         </div>
       </section>
 
@@ -253,15 +260,16 @@ export default function HomePage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Left side - Image */}
-            <div className="relative">
-              <img
-                src="https://i.pinimg.com/736x/c6/a5/93/c6a5935292ba497248c8a860b17e5fc9.jpg"
-                alt="Barangay officials working together"
-                className="rounded-lg shadow-lg w-full h-[400px] object-cover"
-              />
-            </div>
-
+            {/* Left side - Image with overlay */}
+           <div className="relative rounded-lg shadow-lg w-full h-[500px] overflow-hidden">
+            <img
+              src={images.barangay}
+              alt="Barangay officials working together"
+              className="w-full h-full object-cover"
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 pointer-events-none rounded-lg bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+          </div>
             {/* Right side - Content */}
             <div>
               <Badge variant="outline" className="mb-4 uppercase tracking-wide text-sm">
@@ -304,6 +312,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
 
       {/* Enhanced Contact/Help Section */}
       <section className="py-16 bg-muted/30">
@@ -350,18 +359,18 @@ export default function HomePage() {
               </h3>
               <p className="text-muted-foreground max-w-md mx-auto">Quick answers to common questions</p>
             </div>
-           <Accordion type="single" collapsible className="w-full max-w-4xl mx-auto space-y-2">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm sm:text-base text-muted-foreground">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+            <Accordion type="single" collapsible className="w-full max-w-4xl mx-auto space-y-2">
+              {faqs.map((faq, index) => (
+                <AccordionItem key={index} value={`item-${index}`}>
+                  <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm sm:text-base text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
 
             <div className="text-center mt-8">
               <Button variant="outline" asChild>
@@ -390,6 +399,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
       <Footer />
     </div>
   )
