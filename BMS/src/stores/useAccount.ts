@@ -41,7 +41,7 @@ type RegisterInput = {
 
 type RegisterResponse = { message: string };
 
-type UserProfile = {
+export type UserProfile = {
   name: string;
   contact_number: string;
   address: string;
@@ -51,13 +51,8 @@ type UserProfile = {
   image: string | null;
 };
 
+
 export type User = {
-  image: string;
-  position: string;
-  address: string;
-  dateOfBirth: string;
-  civilStatus: string;
-  name: string;
   id: number;
   username: string;
   email: string;
@@ -65,7 +60,7 @@ export type User = {
 };
 
 export const useLogin = () => {
-  const setUser = useAuthStore((s) => s.setUser);
+  const setUser = useAuthStore((s:any) => s.setUser);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -80,7 +75,9 @@ export const useLogin = () => {
         variant: 'success',
       });
 
-      if (user.profile?.role?.toLowerCase() === 'user') {
+      const role = user.profile?.role?.toLowerCase();
+
+      if (role === 'resident' || role === 'user') {
         navigate('/');
       } else {
         navigate('/dashboard');
@@ -96,8 +93,9 @@ export const useLogin = () => {
   });
 };
 
+
 export const useLogout = () => {
-  const logout = useAuthStore((s) => s.logout);
+  const logout = useAuthStore((s:any) => s.logout);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -156,10 +154,10 @@ export const useUsers = () => {
 };
 
 export function useLoadCurrentUser() {
-  const setUser = useAuthStore((s) => s.setUser);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
-  const setLoading = useAuthStore((s) => s.setLoading);
-  const refreshToken = useAuthStore((s) => s.refreshToken);
+  const setUser = useAuthStore((s:any) => s.setUser);
+  const clearAuth = useAuthStore((s:any) => s.clearAuth);
+  const setLoading = useAuthStore((s:any) => s.setLoading);
+  const refreshToken = useAuthStore((s:any) => s.refreshToken);
 
   const hasFetched = useRef(false);
 

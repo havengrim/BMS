@@ -27,7 +27,7 @@ export function LoginForm({
     e.preventDefault();
     if (!email || !password) return;
 
-    login({ email, password }); // Removed onSuccess callback
+    login({ email, password });
   };
 
   return (

@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Phone, Mail, MapPin, Clock, MessageSquare, Facebook, Globe, Users, Shield, Calendar } from "lucide-react"
 import { Footer } from "@/components/footer"
 
@@ -11,7 +10,7 @@ const contactInfo = [
   {
     icon: Phone,
     title: "Phone Numbers",
-    details: ["Landline: (02) 8123-4567", "Mobile: 0917-123-4567", "Emergency: 0918-765-4321"],
+    details: ["Landline: (045) 123-4567", "Mobile: 0917-123-4567", "Emergency: 0918-765-4321"],
   },
   {
     icon: Mail,
@@ -25,7 +24,7 @@ const contactInfo = [
   {
     icon: MapPin,
     title: "Office Address",
-    details: ["Barangay Hall, Sindalan", "123 Main Street", "City, Province 1234"],
+    details: ["Barangay Hall, Sindalan", "San Fernando City, Pampanga", "Philippines 2000"],
   },
   {
     icon: Clock,
@@ -34,39 +33,140 @@ const contactInfo = [
   },
 ]
 
-const teamMembers = [
+const officials = [
   {
-    name: "Juan Dela Cruz",
-    position: "Barangay Captain",
+    name: 'Dr. Benjamin "Doc Benjie" F. Angeles',
+    position: "Punong Barangay",
     contact: "0917-111-1111",
-    email: "captain@sindalan.gov.ph",
-    initials: "JDC",
-    description: "Leading our community with dedication and service for over 8 years.",
+    email: "punongbarangay@sindalan.gov.ph",
+    initials: "BA",
+    description:
+      "Leading our community with dedication and service, committed to the welfare and development of Barangay Sindalan.",
     department: "Executive",
     status: "Available",
-    image: "https://api.dicebear.com/9.x/avataaars/svg?seed=Jameson"
+    committees: ["Chief Executive"],
+    isCapitan: true,
+    image: "/placeholder.svg?height=56&width=56&text=BA",
   },
   {
-    name: "Maria Santos",
-    position: "Barangay Secretary",
+    name: "Kgwd. Jonel L. Antonio",
+    position: "Kagawad",
     contact: "0917-222-2222",
+    email: "antonio@sindalan.gov.ph",
+    initials: "JA",
+    description: "Dedicated to environmental protection and promoting livelihood opportunities for our residents.",
+    department: "Legislative",
+    status: "Available",
+    committees: ["Environmental Protection", "Livelihood and Entrepreneurship"],
+    image: "/placeholder.svg?height=56&width=56&text=JA",
+  },
+  {
+    name: "Kgwd. Pacifico M. Datu",
+    position: "Kagawad",
+    contact: "0917-333-3333",
+    email: "datu@sindalan.gov.ph",
+    initials: "PD",
+    description: "Focused on improving health services and social welfare programs for the community.",
+    department: "Legislative",
+    status: "Available",
+    committees: ["Health and Social Welfare"],
+    image: "/placeholder.svg?height=56&width=56&text=PD",
+  },
+  {
+    name: "Kgwd. Emilio P. Sicat",
+    position: "Kagawad",
+    contact: "0917-444-4444",
+    email: "sicat@sindalan.gov.ph",
+    initials: "ES",
+    description: "Ensuring peace and order while promoting cooperative development and employment opportunities.",
+    department: "Legislative",
+    status: "Available",
+    committees: ["Peace and Order, Public Safety and Human Rights", "Cooperatives and Labor & Employment"],
+    image: "/placeholder.svg?height=56&width=56&text=ES",
+  },
+  {
+    name: "Kgwd. Alfredo S. Dizon, Jr.",
+    position: "Kagawad",
+    contact: "0917-555-5555",
+    email: "dizon@sindalan.gov.ph",
+    initials: "AD",
+    description: "Championing education, cultural preservation, and maintaining high ethical standards in governance.",
+    department: "Legislative",
+    status: "Available",
+    committees: ["Education", "Cultural Preservation", "Ethics"],
+    image: "/placeholder.svg?height=56&width=56&text=AD",
+  },
+  {
+    name: "Kgwd. Alicia I. Dumlao",
+    position: "Kagawad",
+    contact: "0917-666-6666",
+    email: "dumlao@sindalan.gov.ph",
+    initials: "AD",
+    description: "Overseeing infrastructure development and advocating for women and family welfare programs.",
+    department: "Legislative",
+    status: "Available",
+    committees: ["Public Works and Infrastructure Development", "Women & Family"],
+    image: "/placeholder.svg?height=56&width=56&text=AD",
+  },
+  {
+    name: "Kgwd. Dexter M. Francisco",
+    position: "Kagawad",
+    contact: "0917-777-7777",
+    email: "francisco@sindalan.gov.ph",
+    initials: "DF",
+    description: "Managing financial affairs and ensuring services for senior citizens and persons with disabilities.",
+    department: "Legislative",
+    status: "Available",
+    committees: ["Finance, Budget and Appropriation", "Senior Citizen & PWD"],
+    image: "/placeholder.svg?height=56&width=56&text=DF",
+  },
+  {
+    name: "Kgwd. Rommel M. Serrano",
+    position: "Kagawad",
+    contact: "0917-888-8888",
+    email: "serrano@sindalan.gov.ph",
+    initials: "RS",
+    description: "Promoting agricultural development and supporting solo parents and LGBTQ+ community members.",
+    department: "Legislative",
+    status: "Available",
+    committees: ["Agriculture", "Solo Parents and LGBTQ+"],
+    image: "/placeholder.svg?height=56&width=56&text=RS",
+  },
+  {
+    name: "Christian Jon P. Gampoy",
+    position: "SK Chairperson",
+    contact: "0917-999-9999",
+    email: "sk@sindalan.gov.ph",
+    initials: "CG",
+    description: "Leading youth initiatives and sports development programs for the young people of our barangay.",
+    department: "Youth",
+    status: "Available",
+    committees: ["Youth and Sports Development"],
+    image: "/placeholder.svg?height=56&width=56&text=CG",
+  },
+  {
+    name: "Angelyn M. Torno",
+    position: "Barangay Secretary",
+    contact: "0917-101-1010",
     email: "secretary@sindalan.gov.ph",
-    initials: "MS",
-    description: "Managing administrative affairs and ensuring smooth operations.",
+    initials: "AT",
+    description: "Managing administrative affairs and ensuring smooth operations of barangay services.",
     department: "Administration",
     status: "Available",
-    image: "https://api.dicebear.com/9.x/avataaars/svg?seed=Leo"
+    committees: ["Administrative Affairs"],
+    image: "/placeholder.svg?height=56&width=56&text=AT",
   },
   {
-    name: "Pedro Garcia",
+    name: "Jerome Y. Alconga",
     position: "Barangay Treasurer",
-    contact: "0917-333-3333",
+    contact: "0917-111-0101",
     email: "treasurer@sindalan.gov.ph",
-    initials: "PG",
-    description: "Overseeing financial management and budget allocation.",
+    initials: "JA",
+    description: "Overseeing financial management, budget allocation, and ensuring fiscal responsibility.",
     department: "Finance",
-    status: "In Meeting",
-    image: "https://api.dicebear.com/9.x/avataaars/svg?seed=Brian"
+    status: "Available",
+    committees: ["Financial Management"],
+    image: "/placeholder.svg?height=56&width=56&text=JA",
   },
 ]
 
@@ -76,16 +176,17 @@ export default function ContactPage() {
       <Navbar />
 
       {/* Header Section */}
-      <div className="border-b bg-muted/30">
+      <div className="border-b bg-gradient-to-r from-blue-50 to-green-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-6">
               <Phone className="h-4 w-4" />
               Contact Information
             </div>
-            <h1 className="text-4xl font-bold tracking-tight mb-4">Get in Touch</h1>
+            <h1 className="text-4xl font-bold tracking-tight mb-4">Get in Touch with Barangay Sindalan</h1>
             <p className="text-lg text-muted-foreground">
-              We're here to serve our community. Reach out to us for any inquiries, assistance, or feedback.
+              We're here to serve our community. Reach out to us for any inquiries, assistance, or feedback. Your local
+              government is committed to providing excellent public service.
             </p>
           </div>
         </div>
@@ -95,11 +196,11 @@ export default function ContactPage() {
         {/* Quick Contact Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {contactInfo.map((info, index) => (
-            <Card key={index} className="hover:shadow-md transition-all duration-200">
+            <Card key={index} className="hover:shadow-md transition-all duration-200 border-l-4 border-l-primary/30">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-lg">
-                    <info.icon className="h-5 w-5" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <info.icon className="h-5 w-5 text-primary" />
                   </div>
                   <CardTitle className="text-lg">{info.title}</CardTitle>
                 </div>
@@ -119,66 +220,120 @@ export default function ContactPage() {
 
         {/* Main Content */}
         <div className="space-y-16">
-          {/* Team Section */}
+          {/* Sangguniang Barangay Section */}
           <section>
-            <div className="mb-12">
+            <div className="mb-8">
               <div className="flex items-center gap-2 mb-4">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <Badge variant="secondary" className="bg-primary/10 text-primary">
-                  Our Team
+                  Sangguniang Barangay
                 </Badge>
               </div>
-              <h2 className="text-3xl font-bold tracking-tight mb-4">Meet Our Leadership</h2>
+              <h2 className="text-3xl font-bold tracking-tight mb-4">Barangay Sindalan Officials</h2>
               <p className="text-muted-foreground max-w-2xl">
-                Dedicated public servants committed to making our barangay a better place for everyone.
+                Meet our dedicated public servants committed to serving our community.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {teamMembers.map((member, index) => (
-                <Card
-                  key={index}
-                  className="h-full hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary/20 group"
-                >
-                  <CardHeader className=" ">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-14 w-14 ring-2 ring-background shadow-sm">
-                        <AvatarImage
-                          src={member.image || `/placeholder.svg?height=56&width=56&text=${member.initials}`}
-                          alt={member.name}
-                        />
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {member.initials}
+            {/* Punong Barangay - Featured */}
+            <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-blue-50">
+              <CardHeader>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16 ring-2 ring-primary/20">
+                    <AvatarImage src="/placeholder.svg?height=64&width=64&text=BA" alt="Dr. Benjamin Angeles" />
+                    <AvatarFallback className="bg-primary text-primary-foreground font-bold">BA</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-xl text-primary">Dr. Benjamin "Doc Benjie" F. Angeles</CardTitle>
+                    <CardDescription className="text-lg font-medium">Punong Barangay</CardDescription>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-4 w-4" />
+                        0917-111-1111
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Mail className="h-4 w-4" />
+                        punongbarangay@sindalan.gov.ph
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* Officials Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Sangguniang Barangay Members</CardTitle>
+                <CardDescription>Complete list of barangay officials and their responsibilities</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="border-b bg-muted/30">
+                      <tr>
+                        <th className="text-left p-4 font-medium">Official</th>
+                        <th className="text-left p-4 font-medium">Position</th>
+                        <th className="text-left p-4 font-medium">Committees</th>
+                        <th className="text-left p-4 font-medium">Contact</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {officials.slice(1, 8).map((official, index) => (
+                        <tr key={index} className="hover:bg-muted/20">
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                                  {official.initials}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{official.name}</span>
+                            </div>
+                          </td>
+                          <td className="p-4 text-muted-foreground">{official.position}</td>
+                          <td className="p-4">
+                            <div className="space-y-1">
+                              {official.committees.map((committee, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs mr-1">
+                                  {committee}
+                                </Badge>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="p-4 text-sm text-muted-foreground">{official.contact}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Other Key Personnel */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {officials.slice(8).map((official, index) => (
+                <Card key={index} className="hover:shadow-md transition-all duration-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback
+                          className={`${
+                            official.position === "SK Chairperson"
+                              ? "bg-blue-100 text-blue-700"
+                              : official.position === "Barangay Secretary"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-orange-100 text-orange-700"
+                          } font-medium`}
+                        >
+                          {official.initials}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                          {member.name}
-                        </CardTitle>
-                        <CardDescription className="font-medium">{member.position}</CardDescription>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            {member.department}
-                          </Badge>
-                          <Badge variant={member.status === "Available" ? "default" : "secondary"} className="text-xs">
-                            {member.status}
-                          </Badge>
-                        </div>
+                      <div>
+                        <h4 className="font-medium">{official.name}</h4>
+                        <p className="text-sm text-muted-foreground">{official.position}</p>
+                        <p className="text-xs text-muted-foreground">{official.committees[0]}</p>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{member.description}</p>
-                    <Separator className="mb-4" />
-                    <div className="space-y-3">
-                      <Button variant="ghost" size="sm" className="w-full justify-start h-auto p-2 hover:bg-muted/50">
-                        <Phone className="h-4 w-4 text-muted-foreground mr-3" />
-                        <span className="text-sm">{member.contact}</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="w-full justify-start h-auto p-2 hover:bg-muted/50">
-                        <Mail className="h-4 w-4 text-muted-foreground mr-3" />
-                        <span className="text-sm truncate">{member.email}</span>
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -190,7 +345,7 @@ export default function ContactPage() {
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Emergency Contacts */}
             <Card className="border-destructive/20 hover:shadow-lg transition-all duration-200">
-              <CardHeader className="">
+              <CardHeader>
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-destructive/10 rounded-lg">
                     <Shield className="h-5 w-5 text-destructive" />
@@ -244,7 +399,7 @@ export default function ContactPage() {
 
             {/* Office Hours */}
             <Card className="hover:shadow-lg transition-all duration-200">
-              <CardHeader >
+              <CardHeader>
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-muted rounded-lg">
                     <Calendar className="h-5 w-5" />
@@ -277,25 +432,32 @@ export default function ContactPage() {
           {/* Location Map */}
           <section>
             <Card className="overflow-hidden hover:shadow-lg transition-all duration-200">
-              <CardHeader className=" border-b">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-blue-50">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-lg">
-                    <MapPin className="h-6 w-6" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <MapPin className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <CardTitle>Our Location</CardTitle>
-                    <CardDescription>Barangay Hall, Sindalan - 123 Main Street, City, Province 1234</CardDescription>
+                    <CardDescription>
+                      Barangay Hall, Sindalan - San Fernando City, Pampanga, Philippines 2000
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="h-80 bg-muted/20 flex items-center justify-center border-t relative overflow-hidden">
+                <div className="h-80 bg-gradient-to-br from-muted/20 to-primary/5 flex items-center justify-center border-t relative overflow-hidden">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.05)_1px,transparent_1px)] bg-[length:20px_20px]"></div>
                   <div className="text-center text-muted-foreground relative z-10">
-                    <div className="p-4 bg-background rounded-lg shadow-sm border">
-                      <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="font-medium">Interactive Map</p>
+                    <div className="p-6 bg-background rounded-lg shadow-lg border border-primary/20">
+                      <MapPin className="h-12 w-12 mx-auto mb-4 text-primary" />
+                      <p className="font-medium text-primary">Interactive Map</p>
                       <p className="text-sm">Map integration would be displayed here</p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Barangay Hall, Sindalan
+                        <br />
+                        San Fernando City, Pampanga
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -304,6 +466,7 @@ export default function ContactPage() {
           </section>
         </div>
       </div>
+
       <Footer />
     </div>
   )

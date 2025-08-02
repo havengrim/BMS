@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -53,15 +53,24 @@ export function Navbar() {
   const navigate = useNavigate();
   const handleLogout = useLogout();
 
+  const isResidentOrUser =
+    user && (user.profile?.role === "user" || user.profile?.role === "resident");
+
   return (
     <header className="sticky top-0 z-10 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <img src={images.logo || "/placeholder.svg"} className="h-14 w-14" alt="Sindalan Connect Logo" />
+            <img
+              src={images.logo || "/placeholder.svg"}
+              className="h-14 w-14"
+              alt="Sindalan Connect Logo"
+            />
             <div className="flex flex-col">
               <span className="text-lg font-bold">Sindalan Connect</span>
-              <span className="text-xs text-muted-foreground">Barangay Management System</span>
+              <span className="text-xs text-muted-foreground">
+                Barangay Management System
+              </span>
             </div>
           </Link>
 
@@ -133,7 +142,7 @@ export function Navbar() {
           </NavigationMenu>
 
           <div className="flex items-center gap-2">
-            {user && user.profile?.role === "user" ? (
+            {isResidentOrUser ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="cursor-pointer h-8 w-8 hidden md:flex">
@@ -145,7 +154,9 @@ export function Navbar() {
                       }
                       alt={user?.username}
                     />
-                    <AvatarFallback className="font-semibold">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="font-semibold">
+                      {user.username.charAt(0).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -175,7 +186,7 @@ export function Navbar() {
                 </Button>
               </SheetTrigger>
 
-             <SheetContent
+              <SheetContent
                 side="right"
                 accessibilityTitle="Mobile Navigation Menu"
                 accessibilityDescription="Navigate through the mobile menu options"
@@ -183,11 +194,17 @@ export function Navbar() {
               >
                 <div className="flex flex-col h-full">
                   {/* User Profile Section - Mobile */}
-                  {user && user.profile?.role === "user" ? (
+                  {isResidentOrUser ? (
                     <div className="flex items-center gap-3 p-4 border-b">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={user.profile.image || undefined} alt={user.username} />
-                        <AvatarFallback className="font-semibold">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarImage src={
+                        user?.profile?.image
+                          ? `${import.meta.env.VITE_API_URL}${user.profile.image}`
+                          : undefined
+                      } />
+                        <AvatarFallback className="font-semibold">
+                          {user.username.charAt(0).toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
                         <span className="font-medium text-sm">{user.username}</span>
@@ -248,9 +265,13 @@ export function Navbar() {
 
                   {/* User Actions - Mobile (at bottom) */}
                   <div className="p-4 border-t space-y-2">
-                    {user && user.profile?.role === "user" ? (
+                    {isResidentOrUser ? (
                       <>
-                        <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/profile")}>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => navigate("/profile")}
+                        >
                           <User className="mr-2 h-4 w-4" />
                           Settings
                         </Button>
