@@ -183,19 +183,19 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
           {imagePreview && (
             <div className="flex items-center gap-2">
              <Avatar className="h-16 w-16 rounded-md">
-                <AvatarImage
-                  src={
-                    imagePreview
-                      ? imagePreview.startsWith("http")
-                        ? imagePreview
-                        : `${import.meta.env.VITE_API_URL}${imagePreview}`
-                      : "/placeholder.svg"
-                  }
-                  alt="Preview"
-                  className="object-cover"
-                />
-                <AvatarFallback>Preview</AvatarFallback>
-              </Avatar>
+              <AvatarImage
+                src={
+                  imagePreview
+                    ? imagePreview // Use blob URL for preview
+                    : formData.image
+                    ? `${import.meta.env.VITE_API_URL}${formData.image}`
+                    : "/placeholder.svg"
+                }
+                alt="Preview"
+                className="object-cover"
+              />
+              <AvatarFallback>Preview</AvatarFallback>
+            </Avatar>
               <Button
                 type="button"
                 variant="ghost"
