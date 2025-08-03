@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   FileText,
@@ -39,7 +39,6 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Eye,
   ChevronLeft,
   ChevronRight,
@@ -47,161 +46,51 @@ import {
   Edit,
   Trash2,
 } from "lucide-react"
-
-interface CertificateRequest {
-  id: string
-  requestNumber: string
-  applicantName: string
-  applicantEmail: string
-  applicantPhone: string
-  certificateType: string
-  purpose: string
-  dateSubmitted: string
-  status: "pending" | "processing" | "approved" | "rejected" | "completed"
-  priority: "normal" | "urgent"
-  fee: string
-  notes?: string
-  documents: string[]
-  processedBy?: string
-  completedDate?: string
-}
-
-const initialRequests: CertificateRequest[] = [
-  {
-    id: "1",
-    requestNumber: "BR-2024-001",
-    applicantName: "Juan Dela Cruz",
-    applicantEmail: "juan.delacruz@email.com",
-    applicantPhone: "09171234567",
-    certificateType: "Barangay Clearance",
-    purpose: "Employment Requirements",
-    dateSubmitted: "2024-01-15",
-    status: "completed",
-    priority: "normal",
-    fee: "₱50.00",
-    documents: ["Valid ID", "Proof of Residency", "Application Form"],
-    processedBy: "Maria Santos",
-    completedDate: "2024-01-16",
-  },
-  {
-    id: "2",
-    requestNumber: "BR-2024-002",
-    applicantName: "Maria Garcia",
-    applicantEmail: "maria.garcia@email.com",
-    applicantPhone: "09187654321",
-    certificateType: "Certificate of Indigency",
-    purpose: "Medical Assistance",
-    dateSubmitted: "2024-01-16",
-    status: "processing",
-    priority: "urgent",
-    fee: "Free",
-    documents: ["Valid ID", "Medical Certificate", "Income Statement"],
-    processedBy: "Pedro Rodriguez",
-  },
-  {
-    id: "3",
-    requestNumber: "BR-2024-003",
-    applicantName: "Carlos Santos",
-    applicantEmail: "carlos.santos@email.com",
-    applicantPhone: "09191234567",
-    certificateType: "Business Permit",
-    purpose: "Sari-sari Store Operation",
-    dateSubmitted: "2024-01-17",
-    status: "pending",
-    priority: "normal",
-    fee: "₱200.00",
-    documents: ["DTI Registration", "Valid ID", "Location Sketch"],
-  },
-  {
-    id: "4",
-    requestNumber: "BR-2024-004",
-    applicantName: "Ana Rodriguez",
-    applicantEmail: "ana.rodriguez@email.com",
-    applicantPhone: "09201234567",
-    certificateType: "Certificate of Residency",
-    purpose: "School Enrollment",
-    dateSubmitted: "2024-01-18",
-    status: "approved",
-    priority: "normal",
-    fee: "₱30.00",
-    documents: ["Valid ID", "Utility Bill", "School Requirements"],
-    processedBy: "Elena Reyes",
-  },
-  {
-    id: "5",
-    requestNumber: "BR-2024-005",
-    applicantName: "Roberto Fernandez",
-    applicantEmail: "roberto.fernandez@email.com",
-    applicantPhone: "09211234567",
-    certificateType: "Senior Citizen Certificate",
-    purpose: "Discount Privileges",
-    dateSubmitted: "2024-01-19",
-    status: "rejected",
-    priority: "normal",
-    fee: "Free",
-    documents: ["Valid ID", "Birth Certificate"],
-    notes: "Missing required documents - birth certificate not clear enough to verify age",
-    processedBy: "Miguel Torres",
-  },
-  {
-    id: "6",
-    requestNumber: "BR-2024-006",
-    applicantName: "Lisa Mendoza",
-    applicantEmail: "lisa.mendoza@email.com",
-    applicantPhone: "09221234567",
-    certificateType: "Certificate of Good Moral Character",
-    purpose: "Job Application",
-    dateSubmitted: "2024-01-20",
-    status: "processing",
-    priority: "normal",
-    fee: "₱75.00",
-    documents: ["Valid ID", "Character References", "Police Clearance"],
-    processedBy: "Rosa Fernandez",
-  },
-]
-
+import { useCertificates, useEditCertificate, useDeleteCertificate, type Certificate, type Status } from "@/stores/useCertificates"
 
 const certificateTypes = [
   "All",
   "Barangay Clearance",
   "Certificate of Residency",
   "Certificate of Indigency",
-  "Business Permit",
-  "Senior Citizen Certificate",
-  "Certificate of Good Moral Character",
-]
+  "Business Clearance",
+] as const
+
+type CertificateType = typeof certificateTypes[number] extends "All" ? never : typeof certificateTypes[number]
+
+const statusOptions = ["All", "pending", "approved", "rejected", "completed"] as const
 
 export default function Certificates() {
-  const [requests, setRequests] = useState<CertificateRequest[]>(initialRequests)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedStatus, setSelectedStatus] = useState("All")
-  const [selectedPriority, setSelectedPriority] = useState("All")
-  const [selectedType, setSelectedType] = useState("All")
-  const [selectedRequest, setSelectedRequest] = useState<CertificateRequest | null>(null)
+  const [selectedStatus, setSelectedStatus] = useState<"All" | Status>("All")
+  const [selectedType, setSelectedType] = useState<string>("All")
+  const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editingRequest, setEditingRequest] = useState<CertificateRequest | null>(null)
-  // Pagination state
+  const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
 
-  const filteredRequests = requests.filter((request) => {
-    const matchesSearch =
-      request.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.requestNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.certificateType.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = selectedStatus === "All" || request.status === selectedStatus
-    const matchesPriority = selectedPriority === "All" || request.priority === selectedPriority
-    const matchesType = selectedType === "All" || request.certificateType === selectedType
+  const { data: certificates = [], isLoading, error } = useCertificates()
+  const editCertificateMutation = useEditCertificate()
+  const deleteCertificateMutation = useDeleteCertificate()
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesType
+  const filteredCertificates = certificates.filter((certificate) => {
+    const matchesSearch =
+      certificate.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      certificate.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      certificate.request_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      certificate.certificate_type.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = selectedStatus === "All" || certificate.status === selectedStatus
+    const matchesType = selectedType === "All" || certificate.certificate_type === selectedType
+
+    return matchesSearch && matchesStatus && matchesType
   })
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredCertificates.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const currentRequests = filteredRequests.slice(startIndex, endIndex)
+  const currentCertificates = filteredCertificates.slice(startIndex, endIndex)
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -212,51 +101,69 @@ export default function Certificates() {
     setCurrentPage(1)
   }
 
-  const handleViewRequest = (request: CertificateRequest) => {
-    setSelectedRequest(request)
+  const handleViewCertificate = (certificate: Certificate) => {
+    setSelectedCertificate(certificate)
     setIsViewDialogOpen(true)
   }
 
-  const handleEditRequest = (request: CertificateRequest) => {
-    setEditingRequest({ ...request })
+  const handleEditCertificate = (certificate: Certificate) => {
+    setEditingCertificate({ ...certificate })
     setIsEditDialogOpen(true)
   }
 
   const handleSaveEdit = () => {
-    if (editingRequest) {
-      setRequests(
-        requests.map((request) =>
-          request.id === editingRequest.id
-            ? {
-                ...editingRequest,
-                processedBy: editingRequest.status !== "pending" ? "Current User" : undefined,
-                completedDate:
-                  editingRequest.status === "completed" ? new Date().toISOString().split("T")[0] : undefined,
-              }
-            : request,
-        ),
+    if (editingCertificate) {
+      editCertificateMutation.mutate(
+        {
+          id: editingCertificate.id,
+          data: {
+            certificate_type: editingCertificate.certificate_type,
+            first_name: editingCertificate.first_name,
+            last_name: editingCertificate.last_name,
+            middle_name: editingCertificate.middle_name,
+            complete_address: editingCertificate.complete_address,
+            contact_number: editingCertificate.contact_number,
+            email_address: editingCertificate.email_address,
+            purpose: editingCertificate.purpose,
+            agree_terms: editingCertificate.agree_terms,
+            status: editingCertificate.status,
+          },
+        },
+        {
+          onSuccess: () => {
+            console.log("Certificate updated successfully:", editingCertificate.id)
+            setIsEditDialogOpen(false)
+            setEditingCertificate(null)
+          },
+          onError: (error) => {
+            console.error("Error updating certificate:", error)
+          },
+        },
       )
-      setIsEditDialogOpen(false)
-      setEditingRequest(null)
     }
   }
 
-  const handleDeleteRequest = (requestId: string) => {
-    setRequests(requests.filter((request) => request.id !== requestId))
+  const handleDeleteCertificate = (id: number) => {
+    deleteCertificateMutation.mutate(id, {
+      onSuccess: () => {
+        console.log("Certificate deleted successfully:", id)
+      },
+      onError: (error) => {
+        console.error("Error deleting certificate:", error)
+      },
+    })
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800"
-      case "processing":
-        return "bg-blue-100 text-blue-800"
       case "approved":
-        return "bg-green-100 text-green-800"
+        return "bg-blue-100 text-blue-800"
       case "rejected":
         return "bg-red-100 text-red-800"
       case "completed":
-        return "bg-purple-100 text-purple-800"
+        return "bg-green-100 text-green-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
@@ -266,8 +173,6 @@ export default function Certificates() {
     switch (status) {
       case "pending":
         return <Clock className="h-4 w-4" />
-      case "processing":
-        return <AlertCircle className="h-4 w-4" />
       case "approved":
         return <CheckCircle className="h-4 w-4" />
       case "rejected":
@@ -283,8 +188,6 @@ export default function Certificates() {
     switch (status) {
       case "pending":
         return "New request - waiting to be reviewed"
-      case "processing":
-        return "Being worked on by staff"
       case "approved":
         return "Approved and being prepared"
       case "rejected":
@@ -294,10 +197,6 @@ export default function Certificates() {
       default:
         return ""
     }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    return priority === "urgent" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-800"
   }
 
   return (
@@ -316,11 +215,7 @@ export default function Certificates() {
           <div className="flex flex-1 flex-col mb-18">
             <div className="@container/main flex flex-1 flex-col gap-2">
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-                {/* Header */}
                 <div className="px-6">
-                  
-
-                  {/* Stats Cards */}
                   <div className="grid gap-4 md:grid-cols-4 mb-6">
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -328,82 +223,73 @@ export default function Certificates() {
                         <FileText className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{requests.length}</div>
+                        <div className="text-2xl font-bold">{certificates.length}</div>
                         <p className="text-xs text-muted-foreground">All requests ever received</p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Waiting</CardTitle>
+                        <CardTitle className="text-sm font-medium">Pending</CardTitle>
                         <Clock className="h-4 w-4 text-yellow-600" />
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {requests.filter((r) => r.status === "pending").length}
+                          {certificates.filter((r) => r.status === "pending").length}
                         </div>
                         <p className="text-xs text-muted-foreground">New requests to review</p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Working On</CardTitle>
-                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                        <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                        <CheckCircle className="h-4 w-4 text-blue-600" />
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {requests.filter((r) => r.status === "processing").length}
+                          {certificates.filter((r) => r.status === "approved").length}
                         </div>
-                        <p className="text-xs text-muted-foreground">Currently being prepared</p>
+                        <p className="text-xs text-muted-foreground">Approved requests</p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ready</CardTitle>
+                        <CardTitle className="text-sm font-medium">Completed</CardTitle>
                         <CheckCircle className="h-4 w-4 text-green-600" />
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {requests.filter((r) => r.status === "completed").length}
+                          {certificates.filter((r) => r.status === "completed").length}
                         </div>
                         <p className="text-xs text-muted-foreground">Ready for pickup</p>
                       </CardContent>
                     </Card>
                   </div>
 
-                  {/* Filters */}
                   <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                    <h3 className="font-medium mb-3">Find Requests</h3>
+                    <h3 className="font-medium mb-3">Find Certificates</h3>
                     <div className="flex flex-col lg:flex-row gap-4">
                       <div className="relative flex-1">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Type a name, request number, or certificate type to search..."
+                          placeholder="Search by name, request number, or certificate type..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="pl-8"
                         />
                       </div>
-                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <Select  value={selectedStatus}
+                        onValueChange={(value) => setSelectedStatus(value as Status | "All")}>
                         <SelectTrigger className="w-full lg:w-40">
                           <SelectValue placeholder="All Statuses" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="All">All Statuses</SelectItem>
-                          <SelectItem value="pending">Waiting</SelectItem>
-                          <SelectItem value="processing">Working On</SelectItem>
-                          <SelectItem value="approved">Approved</SelectItem>
-                          <SelectItem value="rejected">Denied</SelectItem>
-                          <SelectItem value="completed">Ready</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedPriority} onValueChange={setSelectedPriority}>
-                        <SelectTrigger className="w-full lg:w-40">
-                          <SelectValue placeholder="All Priorities" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="All">All Priorities</SelectItem>
-                          <SelectItem value="normal">Normal</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
+                          {statusOptions.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status === "All"
+                                ? "All Statuses"
+                                : status.charAt(0).toUpperCase() + status.slice(1)}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <Select value={selectedType} onValueChange={setSelectedType}>
@@ -438,150 +324,140 @@ export default function Certificates() {
                   </div>
                 </div>
 
-                {/* Requests Table */}
                 <div>
                   <Card className="!border-none !py-0 !shadow-none">
                     <CardHeader>
                       <CardTitle>All Certificate Requests</CardTitle>
                       <CardDescription>
-                        Showing {startIndex + 1} to {Math.min(endIndex, filteredRequests.length)} of{" "}
-                        {filteredRequests.length} requests
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredCertificates.length)} of{" "}
+                        {filteredCertificates.length} requests
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Request Number</TableHead>
-                            <TableHead>Person Requesting</TableHead>
-                            <TableHead>Certificate Type</TableHead>
-                            <TableHead>Date Submitted</TableHead>
-                            <TableHead>Current Status</TableHead>
-                            <TableHead>Priority</TableHead>
-                            <TableHead>Fee</TableHead>
-                            <TableHead className="text-center">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {currentRequests.map((request) => (
-                            <TableRow key={request.id}>
-                              <TableCell className="font-medium">{request.requestNumber}</TableCell>
-                              <TableCell>
-                                <div>
-                                  <div className="font-medium">{request.applicantName}</div>
-                                  <div className="text-sm text-muted-foreground">{request.applicantEmail}</div>
-                                </div>
-                              </TableCell>
-                              <TableCell>{request.certificateType}</TableCell>
-                              <TableCell>{new Date(request.dateSubmitted).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <div className="space-y-1">
-                                  <Badge className={getStatusColor(request.status)}>
-                                    <div className="flex items-center gap-1">
-                                      {getStatusIcon(request.status)}
-                                      {request.status === "pending" && "Waiting"}
-                                      {request.status === "processing" && "Working On"}
-                                      {request.status === "approved" && "Approved"}
-                                      {request.status === "rejected" && "Denied"}
-                                      {request.status === "completed" && "Ready"}
+                      {isLoading ? (
+                        <div>Loading certificates...</div>
+                      ) : error ? (
+                        <div className="text-red-600">Error: {error.message}</div>
+                      ) : filteredCertificates.length === 0 ? (
+                        <div className="text-muted-foreground">No certificates found.</div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Request Number</TableHead>
+                              <TableHead>Applicant</TableHead>
+                              <TableHead>Certificate Type</TableHead>
+                              <TableHead>Date Submitted</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-center">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {currentCertificates.map((certificate) => (
+                              <TableRow key={certificate.id}>
+                                <TableCell className="font-medium">{certificate.request_number}</TableCell>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">
+                                      {certificate.first_name} {certificate.last_name}
                                     </div>
-                                  </Badge>
-                                  <p className="text-xs text-muted-foreground">
-                                    {getStatusExplanation(request.status)}
-                                  </p>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge className={getPriorityColor(request.priority)}>
-                                  {request.priority === "urgent" ? "Urgent" : "Normal"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{request.fee}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center justify-center gap-2">
-                                  {/* View Button */}
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleViewRequest(request)}
-                                        className="h-8 w-8 p-0"
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>View Details</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-
-                                  {/* Edit Button */}
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEditRequest(request)}
-                                        className="h-8 w-8 p-0"
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Edit & Update Status</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-
-                                  {/* Delete Button */}
-                                  <AlertDialog>
+                                    <div className="text-sm text-muted-foreground">{certificate.email_address}</div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{certificate.certificate_type}</TableCell>
+                                <TableCell>{new Date(certificate.created_at).toLocaleDateString()}</TableCell>
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    <Badge className={getStatusColor(certificate.status)}>
+                                      <div className="flex items-center gap-1">
+                                        {getStatusIcon(certificate.status)}
+                                        {certificate.status.charAt(0).toUpperCase() + certificate.status.slice(1)}
+                                      </div>
+                                    </Badge>
+                                    <p className="text-xs text-muted-foreground">
+                                      {getStatusExplanation(certificate.status)}
+                                    </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center justify-center gap-2">
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <AlertDialogTrigger asChild>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 w-8 p-0 border-red-200 hover:bg-red-50 bg-transparent"
-                                          >
-                                            <Trash2 className="h-4 w-4 text-red-600" />
-                                          </Button>
-                                        </AlertDialogTrigger>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleViewCertificate(certificate)}
+                                          className="h-8 w-8 p-0"
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                        </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Delete Request</p>
+                                        <p>View Details</p>
                                       </TooltipContent>
                                     </Tooltip>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete This Request?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Are you sure you want to permanently delete the certificate request from{" "}
-                                          <strong>{request.applicantName}</strong>?
-                                          <br />
-                                          <br />
-                                          This action cannot be undone. The request will be completely removed from the
-                                          system.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel - Keep Request</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => handleDeleteRequest(request.id)}
-                                          className="bg-red-600 hover:bg-red-700"
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleEditCertificate(certificate)}
+                                          className="h-8 w-8 p-0"
                                         >
-                                          Yes, Delete Forever
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-
-                      {/* Pagination */}
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Edit Certificate</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                    <AlertDialog>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <AlertDialogTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-8 w-8 p-0 border-red-200 hover:bg-red-50 bg-transparent"
+                                            >
+                                              <Trash2 className="h-4 w-4 text-red-600" />
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Delete Certificate</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete This Certificate?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to permanently delete the certificate request from{" "}
+                                            <strong>
+                                              {certificate.first_name} {certificate.last_name}
+                                            </strong>
+                                            ?<br />
+                                            This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => handleDeleteCertificate(certificate.id)}
+                                            className="bg-red-600 hover:bg-red-700"
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
                       <div className="flex items-center justify-between mt-4">
                         <div className="text-sm text-muted-foreground">
                           Page {currentPage} of {totalPages}
@@ -625,114 +501,78 @@ export default function Certificates() {
                   </Card>
                 </div>
 
-                {/* View Request Dialog */}
                 <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
                   <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Eye className="h-5 w-5" />
-                        View Details - {selectedRequest?.requestNumber}
+                        View Details - {selectedCertificate?.request_number}
                       </DialogTitle>
-                      <DialogDescription>All information about this certificate request (read-only)</DialogDescription>
+                      <DialogDescription>Certificate request details (read-only)</DialogDescription>
                     </DialogHeader>
-                    {selectedRequest && (
+                    {selectedCertificate && (
                       <div className="grid gap-6 py-4">
-                        {/* Applicant Information */}
                         <div className="bg-blue-50 p-4 rounded-lg">
                           <h4 className="font-semibold mb-3 flex items-center gap-2">
                             <User className="h-4 w-4" />
-                            About the Person Requesting
+                            Applicant Information
                           </h4>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <Label className="font-medium">Full Name:</Label>
-                              <p>{selectedRequest.applicantName}</p>
+                              <p>
+                                {selectedCertificate.first_name} {selectedCertificate.last_name}
+                              </p>
                             </div>
                             <div>
                               <Label className="font-medium">Email Address:</Label>
-                              <p>{selectedRequest.applicantEmail}</p>
+                              <p>{selectedCertificate.email_address}</p>
                             </div>
                             <div>
                               <Label className="font-medium">Phone Number:</Label>
-                              <p>{selectedRequest.applicantPhone}</p>
+                              <p>{selectedCertificate.contact_number}</p>
                             </div>
                             <div>
-                              <Label className="font-medium">Why They Need It:</Label>
-                              <p>{selectedRequest.purpose}</p>
+                              <Label className="font-medium">Address:</Label>
+                              <p>{selectedCertificate.complete_address}</p>
+                            </div>
+                            <div>
+                              <Label className="font-medium">Purpose:</Label>
+                              <p>{selectedCertificate.purpose}</p>
+                            </div>
+                            <div>
+                              <Label className="font-medium">Agreed to Terms:</Label>
+                              <p>{selectedCertificate.agree_terms ? "Yes" : "No"}</p>
                             </div>
                           </div>
                         </div>
-
-                        {/* Request Information */}
                         <div className="bg-green-50 p-4 rounded-lg">
                           <h4 className="font-semibold mb-3 flex items-center gap-2">
                             <FileText className="h-4 w-4" />
-                            About This Request
+                            Request Information
                           </h4>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <Label className="font-medium">Certificate Type:</Label>
-                              <p>{selectedRequest.certificateType}</p>
+                              <p>{selectedCertificate.certificate_type}</p>
                             </div>
                             <div>
-                              <Label className="font-medium">When They Applied:</Label>
-                              <p>{new Date(selectedRequest.dateSubmitted).toLocaleDateString()}</p>
+                              <Label className="font-medium">Request Number:</Label>
+                              <p>{selectedCertificate.request_number}</p>
                             </div>
                             <div>
-                              <Label className="font-medium">Current Status:</Label>
-                              <div className="flex items-center gap-2">
-                                <Badge className={getStatusColor(selectedRequest.status)}>
-                                  {selectedRequest.status === "pending" && "Waiting"}
-                                  {selectedRequest.status === "processing" && "Working On"}
-                                  {selectedRequest.status === "approved" && "Approved"}
-                                  {selectedRequest.status === "rejected" && "Denied"}
-                                  {selectedRequest.status === "completed" && "Ready"}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  ({getStatusExplanation(selectedRequest.status)})
-                                </span>
-                              </div>
+                              <Label className="font-medium">Submitted:</Label>
+                              <p>{new Date(selectedCertificate.created_at).toLocaleDateString()}</p>
                             </div>
                             <div>
-                              <Label className="font-medium">Priority Level:</Label>
-                              <Badge className={getPriorityColor(selectedRequest.priority)}>
-                                {selectedRequest.priority === "urgent" ? "Urgent - Handle First" : "Normal Priority"}
+                              <Label className="font-medium">Status:</Label>
+                              <Badge className={getStatusColor(selectedCertificate.status)}>
+                                {selectedCertificate.status.charAt(0).toUpperCase() +
+                                  selectedCertificate.status.slice(1)}
                               </Badge>
                             </div>
-                            <div>
-                              <Label className="font-medium">Fee to Pay:</Label>
-                              <p className="font-semibold">{selectedRequest.fee}</p>
-                            </div>
-                            {selectedRequest.processedBy && (
-                              <div>
-                                <Label className="font-medium">Handled By:</Label>
-                                <p>{selectedRequest.processedBy}</p>
-                              </div>
-                            )}
                           </div>
                         </div>
-
-                        {/* Documents */}
-                        <div className="bg-yellow-50 p-4 rounded-lg">
-                          <h4 className="font-semibold mb-3">Documents They Submitted</h4>
-                          <ul className="space-y-2">
-                            {selectedRequest.documents.map((doc, index) => (
-                              <li key={index} className="flex items-center gap-2 text-sm">
-                                <div className="w-2 h-2 rounded-full bg-green-500" />
-                                <span className="font-medium">{doc}</span>
-                                <span className="text-green-600 text-xs">✓ Received</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Notes */}
-                        {selectedRequest.notes && (
-                          <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
-                            <h4 className="font-semibold mb-2 text-red-800">Important Notes</h4>
-                            <p className="text-sm text-red-700">{selectedRequest.notes}</p>
-                          </div>
-                        )}
                       </div>
                     )}
                     <DialogFooter>
@@ -743,105 +583,180 @@ export default function Certificates() {
                   </DialogContent>
                 </Dialog>
 
-                {/* Edit Request Dialog */}
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                   <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Edit className="h-5 w-5" />
-                        Edit Request - {editingRequest?.requestNumber}
+                        Edit Certificate - {editingCertificate?.request_number}
                       </DialogTitle>
-                      <DialogDescription>
-                        Update the status and add notes for this certificate request
-                      </DialogDescription>
+                      <DialogDescription>Update certificate details</DialogDescription>
                     </DialogHeader>
-                    {editingRequest && (
+                    {editingCertificate && (
                       <div className="grid gap-6 py-4">
-                        {/* Request Summary */}
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <h4 className="font-semibold mb-2">Request Summary</h4>
-                          <p className="text-sm">
-                            <strong>{editingRequest.applicantName}</strong> requested a{" "}
-                            <strong>{editingRequest.certificateType}</strong> for{" "}
-                            <strong>{editingRequest.purpose}</strong>
-                          </p>
-                        </div>
-
-                        {/* Status Update */}
                         <div className="space-y-4">
                           <div>
-                            <Label htmlFor="status" className="text-base font-medium">
-                              Update Status
+                            <Label htmlFor="certificate_type" className="text-base font-medium">
+                              Certificate Type
                             </Label>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              Choose what stage this request is currently in
-                            </p>
                             <Select
-                              value={editingRequest.status}
-                              onValueChange={(value: CertificateRequest["status"]) =>
-                                setEditingRequest({ ...editingRequest, status: value })
+                              value={editingCertificate.certificate_type}
+                              onValueChange={(value: CertificateType) =>
+                                setEditingCertificate({ ...editingCertificate, certificate_type: value })
                               }
                             >
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="pending">Waiting - New request to review</SelectItem>
-                                <SelectItem value="processing">Working On - Currently being prepared</SelectItem>
-                                <SelectItem value="approved">Approved - Ready to be completed</SelectItem>
-                                <SelectItem value="rejected">Denied - Request cannot be fulfilled</SelectItem>
-                                <SelectItem value="completed">Ready - Certificate is ready for pickup</SelectItem>
+                                {certificateTypes
+                                  .filter((type) => type !== "All")
+                                  .map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {type}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                           </div>
-
-                          {/* Priority Update */}
                           <div>
-                            <Label htmlFor="priority" className="text-base font-medium">
-                              Priority Level
+                            <Label htmlFor="first_name" className="text-base font-medium">
+                              First Name
                             </Label>
-                            <p className="text-sm text-muted-foreground mb-2">Set how urgent this request is</p>
-                            <Select
-                              value={editingRequest.priority}
-                              onValueChange={(value: CertificateRequest["priority"]) =>
-                                setEditingRequest({ ...editingRequest, priority: value })
+                            <Input
+                              id="first_name"
+                              value={editingCertificate.first_name}
+                              onChange={(e) =>
+                                setEditingCertificate({ ...editingCertificate, first_name: e.target.value })
                               }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="normal">Normal - Regular processing</SelectItem>
-                                <SelectItem value="urgent">Urgent - Handle first</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Notes */}
-                          <div>
-                            <Label htmlFor="notes" className="text-base font-medium">
-                              Notes
-                            </Label>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              Add any important information or reasons (especially if denying the request)
-                            </p>
-                            <Textarea
-                              id="notes"
-                              placeholder="Example: Missing clear photo of ID, or documents are not complete..."
-                              value={editingRequest.notes || ""}
-                              onChange={(e) => setEditingRequest({ ...editingRequest, notes: e.target.value })}
-                              rows={4}
                             />
+                          </div>
+                          <div>
+                            <Label htmlFor="last_name" className="text-base font-medium">
+                              Last Name
+                            </Label>
+                            <Input
+                              id="last_name"
+                              value={editingCertificate.last_name}
+                              onChange={(e) =>
+                                setEditingCertificate({ ...editingCertificate, last_name: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="middle_name" className="text-base font-medium">
+                              Middle Name
+                            </Label>
+                            <Input
+                              id="middle_name"
+                              value={editingCertificate.middle_name || ""}
+                              onChange={(e) =>
+                                setEditingCertificate({ ...editingCertificate, middle_name: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="complete_address" className="text-base font-medium">
+                              Address
+                            </Label>
+                            <Input
+                              id="complete_address"
+                              value={editingCertificate.complete_address}
+                              onChange={(e) =>
+                                setEditingCertificate({ ...editingCertificate, complete_address: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="contact_number" className="text-base font-medium">
+                              Contact Number
+                            </Label>
+                            <Input
+                              id="contact_number"
+                              value={editingCertificate.contact_number}
+                              onChange={(e) =>
+                                setEditingCertificate({ ...editingCertificate, contact_number: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="email_address" className="text-base font-medium">
+                              Email Address
+                            </Label>
+                            <Input
+                              id="email_address"
+                              value={editingCertificate.email_address}
+                              onChange={(e) =>
+                                setEditingCertificate({ ...editingCertificate, email_address: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="purpose" className="text-base font-medium">
+                              Purpose
+                            </Label>
+                            <Input
+                              id="purpose"
+                              value={editingCertificate.purpose}
+                              onChange={(e) =>
+                                setEditingCertificate({ ...editingCertificate, purpose: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="agree_terms" className="text-base font-medium">
+                              Agree to Terms
+                            </Label>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="agree_terms"
+                                checked={editingCertificate.agree_terms}
+                                onCheckedChange={(checked) =>
+                                  setEditingCertificate({
+                                    ...editingCertificate,
+                                    agree_terms: checked as boolean,
+                                  })
+                                }
+                              />
+                              <Label htmlFor="agree_terms" className="text-sm">
+                                Applicant agrees to terms and conditions
+                              </Label>
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="status" className="text-base font-medium">
+                              Status
+                            </Label>
+                            <Select
+                              value={editingCertificate.status}
+                              onValueChange={(value: Status) =>
+                                setEditingCertificate({ ...editingCertificate, status: value })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="approved">Approved</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                       </div>
                     )}
                     <DialogFooter className="flex gap-2">
                       <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                        Cancel - Don't Save
+                        Cancel
                       </Button>
-                      <Button onClick={handleSaveEdit} className="bg-green-600 hover:bg-green-700">
-                        Save Changes
+                      <Button
+                        onClick={handleSaveEdit}
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={editCertificateMutation.isPending}
+                      >
+                        {editCertificateMutation.isPending ? "Saving..." : "Save Changes"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>

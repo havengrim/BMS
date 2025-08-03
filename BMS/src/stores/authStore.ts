@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
-import { api } from "@/lib/api";
+import { api as apiClient } from "@/lib/api"; // renamed to avoid conflict
 import type { User } from "@/types/auth";
 
 type AuthState = {
@@ -19,9 +19,9 @@ type AuthState = {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set, get, storeApi) => ({
       user: null,
-      token: Cookies.get("access_token") || null,
+      token: null,
       loading: false,
 
       isAuthenticated: () => !!get().user && !!get().token,
@@ -32,26 +32,29 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         set({ user: null, token: null });
-        Cookies.remove("access_token");
-        Cookies.remove("refresh_token");
+        Cookies.remove("access_token", { path: "/", secure: true, sameSite: "Lax" });
+        Cookies.remove("refresh_token", { path: "/", secure: true, sameSite: "Lax" });
+        storeApi.persist.clearStorage();
+        localStorage.removeItem("auth-storage");
       },
-
       logout: () => {
-        set({ user: null, token: null });
-        Cookies.remove("access_token");
-        Cookies.remove("refresh_token");
+        get().clearAuth();
       },
 
       refreshToken: async () => {
         try {
           set({ loading: true });
           console.log("useAuthStore: Attempting to refresh token...");
-          const res = await api.post("/api/token/refresh/", {}, { withCredentials: true });
+          const res = await apiClient.post(
+            "/api/token/refresh/",
+            {},
+            { withCredentials: true }
+          );
           console.log("useAuthStore: Refresh token response:", res.data);
           const accessToken = res.data?.access || Cookies.get("access_token");
 
           if (accessToken) {
-            Cookies.set("access_token", accessToken, { expires: 1 / 24 }); // 1 hour expiry
+            Cookies.set("access_token", accessToken, { expires: 1 / 24 }); 
             set({ token: accessToken });
             console.log("useAuthStore: New access token set:", accessToken);
           } else {
@@ -59,7 +62,9 @@ export const useAuthStore = create<AuthState>()(
             throw new Error("No access token received");
           }
 
-          const userRes = await api.get("/api/auth/user/", { withCredentials: true });
+          const userRes = await apiClient.get("/api/auth/user/", {
+            withCredentials: true,
+          });
           console.log("useAuthStore: User data fetched:", userRes.data);
           set({ user: userRes.data });
         } catch (error) {
@@ -74,7 +79,6 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       partialize: (state: AuthState) => ({
         user: state.user,
-        token: state.token,
       }),
     }
   )

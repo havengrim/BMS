@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,6 @@ import {
   Clock,
   CheckCircle,
   Package,
-  AlertCircle,
   AlertTriangle,
 } from "lucide-react";
 import { Footer } from "@/components/footer";
@@ -32,6 +31,7 @@ import {
   type Certificate,
 } from "@/stores/useCertificates";
 import { useAuthStore } from "@/stores/authStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 const certificateTypes = [
   {
@@ -68,10 +68,10 @@ const getStatusIcon = (status: string) => {
   switch (status) {
     case "pending":
       return <Clock className="h-4 w-4" />;
-    case "processing":
+    case "approved":
       return <Package className="h-4 w-4" />;
-    case "ready":
-      return <AlertCircle className="h-4 w-4" />;
+    case "rejected":
+      return <AlertTriangle className="h-4 w-4" />;
     case "completed":
       return <CheckCircle className="h-4 w-4" />;
     default:
@@ -83,12 +83,12 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case "pending":
       return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    case "processing":
+    case "approved":
       return "bg-blue-100 text-blue-800 border-blue-200";
-    case "ready":
-      return "bg-green-100 text-green-800 border-green-200";
+    case "rejected":
+      return "bg-red-100 text-red-800 border-red-200";
     case "completed":
-      return "bg-gray-100 text-gray-800 border-gray-200";
+      return "bg-green-100 text-green-800 border-green-200";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
@@ -98,12 +98,12 @@ const getStatusText = (status: string) => {
   switch (status) {
     case "pending":
       return "Pending Review";
-    case "processing":
-      return "Processing";
-    case "ready":
-      return "Ready for Pickup";
+    case "approved":
+      return "Approved";
+    case "rejected":
+      return "Rejected";
     case "completed":
-      return "Completed";
+      return "Ready for Pickup";
     default:
       return "Unknown";
   }
@@ -123,13 +123,18 @@ export default function CertificatesPage() {
   });
 
   const { toast } = useToast();
+  const { user, loading } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  // Clear certificates cache when user changes (logout/login)
+useEffect(() => {
+  queryClient.removeQueries({ queryKey: ["certificates"] });
+}, [user, queryClient]);
+
   const { data: certificates, isLoading, error } = useCertificates();
   const createCertificate = useCreateCertificate();
-  const { user, loading } = useAuthStore();
 
-  // Role-based access only, no isAuthenticated check
-  const isResident =
-    user && user.profile?.role && [ "resident"].includes(user.profile.role);
+  const isResident = user && user.profile?.role && ["resident"].includes(user.profile.role);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,6 +192,7 @@ export default function CertificatesPage() {
         agree_terms: false,
       });
     } catch (err) {
+      console.error("Submit error:", err);
       toast({
         title: "Error",
         description: "Failed to submit certificate request.",
@@ -210,7 +216,6 @@ export default function CertificatesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Certificate Services</h1>
@@ -257,7 +262,6 @@ export default function CertificatesPage() {
           <TabsContent value="request">
             {isResident ? (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Certificate Types */}
                 <div className="lg:col-span-1">
                   <h2 className="text-xl font-semibold mb-4">Available Certificates</h2>
                   <div className="space-y-4">
@@ -290,7 +294,6 @@ export default function CertificatesPage() {
                   </div>
                 </div>
 
-                {/* Request Form */}
                 <div className="lg:col-span-2">
                   <Card>
                     <CardHeader>
@@ -444,9 +447,7 @@ export default function CertificatesPage() {
                             <CardTitle className="text-lg">{request.certificate_type}</CardTitle>
                             <CardDescription>Reference: {request.request_number}</CardDescription>
                           </div>
-                          <Badge
-                            className={`${getStatusColor(request.status)} flex items-center gap-1`}
-                          >
+                          <Badge className={`${getStatusColor(request.status)} flex items-center gap-1`}>
                             {getStatusIcon(request.status)}
                             {getStatusText(request.status)}
                           </Badge>
@@ -494,7 +495,7 @@ export default function CertificatesPage() {
                           <p className="text-sm">{request.purpose}</p>
                         </div>
 
-                        {request.status === "ready" && (
+                        {request.status === "completed" && (
                           <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                             <div className="flex items-center gap-2 text-green-800">
                               <CheckCircle className="h-5 w-5" />
@@ -522,7 +523,6 @@ export default function CertificatesPage() {
           </TabsContent>
         </Tabs>
       </div>
-
       <Footer />
     </div>
   );

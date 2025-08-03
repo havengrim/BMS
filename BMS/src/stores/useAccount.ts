@@ -1,11 +1,11 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { api } from '@/lib/api'; 
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/hooks/use-toast'; 
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-
+import { fetchCurrentUser } from '@/stores/authHelper';
 type LoginInput = { email: string; password: string; };
 
 type LoginResponse = {
@@ -60,29 +60,49 @@ export type User = {
 };
 
 export const useLogin = () => {
-  const setUser = useAuthStore((s:any) => s.setUser);
+  const setUser = useAuthStore((s: any) => s.setUser);
+  const setLoading = useAuthStore((s: any) => s.setLoading);
+  const clearAuth = useAuthStore((s: any) => s.clearAuth);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   return useMutation<LoginResponse, Error, LoginInput>({
-    mutationFn: (data) => api.post('/api/token/', data).then((res) => res.data),
-    onSuccess: ({ user }) => {
-      setUser(user); // tokens are HttpOnly cookies, no need to store in state
+    mutationFn: (data) =>
+      api.post('/api/token/', data, { withCredentials: true }).then((res) => res.data),
 
-      toast({
-        title: 'Login Successful',
-        description: 'You have been logged in.',
-        variant: 'success',
-      });
+    onSuccess: async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/api/auth/user/', { withCredentials: true });
+        const user = res.data;
 
-      const role = user.profile?.role?.toLowerCase();
+        setUser(user);
 
-      if (role === 'resident' || role === 'user') {
-        navigate('/');
-      } else {
-        navigate('/dashboard');
+        toast({
+          title: 'Login Successful',
+          description: 'You have been logged in.',
+          variant: 'success',
+        });
+
+        const role = user.profile?.role?.toLowerCase();
+
+        if (role === 'resident' || role === 'user') {
+          navigate('/');
+        } else {
+          navigate('/dashboard');
+        }
+      } catch (err: any) {
+        clearAuth();
+        toast({
+          title: 'Login Failed',
+          description: 'Could not fetch authenticated user.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
     },
+
     onError: (error) => {
       toast({
         title: 'Login Failed',
@@ -93,30 +113,33 @@ export const useLogin = () => {
   });
 };
 
+import Cookies from "js-cookie";
 
 export const useLogout = () => {
-  const logout = useAuthStore((s:any) => s.logout);
+  const logout = useAuthStore((s: any) => s.logout);
   const { toast } = useToast();
   const navigate = useNavigate();
-
+const queryClient = useQueryClient(); 
   const handleLogout = async () => {
     try {
-      await api.post("/api/logout/", {}, { withCredentials: true }); // ✅ Send cookies
+      await api.post("/api/logout/", {}, { withCredentials: true });
     } catch (error) {
-      console.error("Logout API error:", error); // Even on failure, proceed
+      console.error("Logout API error:", error);
     }
 
-    logout(); // Clear Zustand state
+    // Explicitly clear cookies
+    Cookies.remove("access_token", { path: "/", domain: undefined });
+    Cookies.remove("refresh_token", { path: "/", domain: undefined });
 
+    logout();
+    queryClient.clear();
     toast({
       title: "Logged Out",
       description: "You have been logged out successfully.",
       variant: "default",
     });
 
-    setTimeout(() => {
-      navigate("/login");
-    }, 1500);
+    navigate("/login");
   };
 
   return handleLogout;
@@ -154,10 +177,10 @@ export const useUsers = () => {
 };
 
 export function useLoadCurrentUser() {
-  const setUser = useAuthStore((s:any) => s.setUser);
-  const clearAuth = useAuthStore((s:any) => s.clearAuth);
-  const setLoading = useAuthStore((s:any) => s.setLoading);
-  const refreshToken = useAuthStore((s:any) => s.refreshToken);
+  const setUser = useAuthStore(s => s.setUser);
+  const clearAuth = useAuthStore(s => s.clearAuth);
+  const setLoading = useAuthStore(s => s.setLoading);
+  const refreshToken = useAuthStore(s => s.refreshToken);
 
   const hasFetched = useRef(false);
 
@@ -165,24 +188,6 @@ export function useLoadCurrentUser() {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    async function fetchUser() {
-      setLoading(true);
-
-      try {
-        const res = await api.get('/api/auth/user/', { withCredentials: true });
-        setUser(res.data);
-      } catch (err: any) {
-        if (err.response?.status === 401) {
-          // Call refreshToken when unauthorized
-          await refreshToken();
-        } else {
-          clearAuth();
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchUser();
+    fetchCurrentUser(setUser, clearAuth, setLoading, refreshToken);
   }, [setUser, clearAuth, setLoading, refreshToken]);
 }

@@ -19,7 +19,6 @@ def register(request):
         return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_users(request):
@@ -31,23 +30,35 @@ def get_all_users(request):
 @permission_classes([IsAuthenticated])
 def current_user(request):
     user = request.user
-    profile = {
-        "name": user.profile.name,
-        "contact_number": user.profile.contact_number,
-        "address": user.profile.address,
-        "civil_status": user.profile.civil_status,
-        "birthdate": user.profile.birthdate,
-        "role": user.profile.role,
-        "image": user.profile.image.url if user.profile.image else None,
-    }
+    # Safely get profile, create default if missing or return default data
+    profile = getattr(user, 'profile', None)
+    if profile is None:
+        profile_data = {
+            "name": "",
+            "contact_number": "",
+            "address": "",
+            "civil_status": "",
+            "birthdate": None,
+            "role": "",
+            "image": None,
+        }
+    else:
+        profile_data = {
+            "name": profile.name,
+            "contact_number": profile.contact_number,
+            "address": profile.address,
+            "civil_status": profile.civil_status,
+            "birthdate": profile.birthdate,
+            "role": profile.role,
+            "image": profile.image.url if profile.image else None,
+        }
     data = {
         "id": user.id,
         "username": user.username,
         "email": user.email,
-        "profile": profile,
+        "profile": profile_data,
     }
     return Response(data)
-
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -63,8 +74,21 @@ def user_detail(request, user_id):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})  # add context here
+        serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
+            # Before save, ensure profile exists or create a default one to avoid errors
+            if not hasattr(user, 'profile'):
+                from accounts.models import Profile
+                Profile.objects.create(
+                    user=user,
+                    name=user.username,
+                    contact_number='',
+                    address='',
+                    civil_status='',
+                    birthdate='1900-01-01',
+                    role='user',
+                )
+                user.refresh_from_db()  # refresh to get profile
             serializer.save()
             return Response({"message": "User updated successfully", "user": serializer.data})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -72,6 +96,7 @@ def user_detail(request, user_id):
     elif request.method == 'DELETE':
         user.delete()
         return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
 class CustomEmailLoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -107,7 +132,6 @@ class CustomEmailLoginView(APIView):
             return response
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class TokenRefreshView(APIView):
     permission_classes = [AllowAny]

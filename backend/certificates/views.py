@@ -1,21 +1,29 @@
 from rest_framework import generics, permissions
 from .models import CertificateRequest, BusinessPermit
 from .serializers import CertificateRequestSerializer, BusinessPermitSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CertificateRequestListView(generics.ListAPIView):
     serializer_class = CertificateRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Only return requests for the logged-in user
-        return CertificateRequest.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.is_authenticated:
+            # Check the role from the profile model
+            if hasattr(user, 'profile') and user.profile.role == 'admin':
+                return CertificateRequest.objects.all()
+            else:
+                return CertificateRequest.objects.filter(user=user)
+        return CertificateRequest.objects.none()
 
 class CertificateRequestCreateView(generics.CreateAPIView):
     serializer_class = CertificateRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        # Automatically set the logged-in user
         serializer.save(user=self.request.user)
 
 class CertificateRequestDetailView(generics.RetrieveAPIView):
@@ -24,8 +32,9 @@ class CertificateRequestDetailView(generics.RetrieveAPIView):
     lookup_field = 'id'
 
     def get_queryset(self):
-        # User can only retrieve their own requests
-        return CertificateRequest.objects.filter(user=self.request.user)
+        queryset = CertificateRequest.objects.filter(user=self.request.user)
+        logger.debug(f"Detail View - User: {self.request.user}, Queryset: {queryset.values('id', 'request_number')}")
+        return queryset
 
 class CertificateRequestUpdateView(generics.UpdateAPIView):
     serializer_class = CertificateRequestSerializer
@@ -33,8 +42,10 @@ class CertificateRequestUpdateView(generics.UpdateAPIView):
     lookup_field = 'id'
 
     def get_queryset(self):
-        # User can only update their own requests
-        return CertificateRequest.objects.filter(user=self.request.user)
+
+        queryset = CertificateRequest.objects.all()
+        logger.debug(f"Authenticated User: {self.request.user}, Full Queryset: {queryset.values('id', 'request_number')}")
+        return queryset
 
 class CertificateRequestDeleteView(generics.DestroyAPIView):
     serializer_class = CertificateRequestSerializer
@@ -42,15 +53,28 @@ class CertificateRequestDeleteView(generics.DestroyAPIView):
     lookup_field = 'id'
 
     def get_queryset(self):
-        # User can only delete their own requests
-        return CertificateRequest.objects.filter(user=self.request.user)
+        queryset = CertificateRequest.objects.filter(user=self.request.user)
+        logger.debug(f"Delete View - User: {self.request.user}, Queryset: {queryset.values('id', 'request_number')}")
+        return queryset
 
 class BusinessPermitListCreateView(generics.ListCreateAPIView):
-    queryset = BusinessPermit.objects.all()
     serializer_class = BusinessPermitSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = BusinessPermit.objects.filter(user=self.request.user)
+        logger.debug(f"Business Permit List - User: {self.request.user}, Queryset: {queryset.values('id', 'business_name')}")
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 class BusinessPermitRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = BusinessPermit.objects.all()
     serializer_class = BusinessPermitSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        queryset = BusinessPermit.objects.filter(user=self.request.user)
+        logger.debug(f"Business Permit Detail - User: {self.request.user}, Queryset: {queryset.values('id', 'business_name')}")
+        return queryset

@@ -156,10 +156,6 @@ export default function HomePage() {
               Access barangay services with ease — request certificates, apply for permits, and stay informed in one
               place.
             </p>
-            <p className="text-sm sm:text-base mb-10 max-w-3xl mx-auto text-white/70 italic">
-              Committed to creating a positive environment for sustainable growth through effective services and good
-              local governance.
-            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
                 asChild
