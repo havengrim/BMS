@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Component } from "react"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +31,31 @@ import {
 } from "lucide-react"
 import { Footer } from "@/components/footer"
 
+// Complaint type definition
+export type Complaint = {
+  id: number
+  reference_number: string
+  type: string
+  fullname: string
+  contact_number: string
+  address: string
+  email_address: string
+  subject: string
+  detailed_description: string
+  respondent_name: string
+  respondent_address: string
+  latitude: number
+  longitude: number
+  location: { lat: number; lng: number }
+  date_filed: string
+  status: string
+  priority: string
+  evidence: { id: number; file_url: string }[]
+}
+
+// Fetch complaints using the provided hook
+import { useComplaints, useCreateComplaint } from '@/stores/useComplaints' // Adjust the import path
+
 const complaintTypes = [
   { value: "noise", label: "Noise Complaint", icon: Volume2 },
   { value: "dispute", label: "Neighbor Dispute", icon: Users },
@@ -39,60 +64,31 @@ const complaintTypes = [
   { value: "other", label: "Other", icon: MessageSquare },
 ]
 
-// Mock complaints data
-const mockComplaints = [
-  {
-    id: "comp-001",
-    referenceNumber: "CM-2025-001234",
-    complaintType: "Noise Complaint",
-    subject: "Loud music during late hours",
-    complainantName: "Juan Dela Cruz",
-    dateSubmitted: "2025-01-28",
-    status: "investigating",
-    estimatedResolution: "2025-02-05",
-    priority: "medium",
-    description: "Neighbor playing loud music every night past 10 PM",
-    respondentName: "Maria Santos",
-    mediationRequested: true,
-    location: { lat: 14.5995, lng: 120.9842 },
-  },
-  {
-    id: "comp-002",
-    referenceNumber: "CM-2025-001235",
-    complaintType: "Neighbor Dispute",
-    subject: "Property boundary dispute",
-    complainantName: "Pedro Garcia",
-    dateSubmitted: "2025-01-26",
-    status: "mediation",
-    estimatedResolution: "2025-02-10",
-    priority: "high",
-    description: "Disagreement about fence placement and property boundaries",
-    respondentName: "Ana Reyes",
-    mediationRequested: true,
-    location: { lat: 14.6042, lng: 120.9822 },
-  },
-  {
-    id: "comp-003",
-    referenceNumber: "CM-2025-001236",
-    complaintType: "Safety Concern",
-    subject: "Broken streetlight causing safety hazard",
-    complainantName: "Lisa Torres",
-    dateSubmitted: "2025-01-25",
-    status: "resolved",
-    estimatedResolution: "2025-01-30",
-    priority: "high",
-    description: "Streetlight has been broken for weeks, creating dangerous conditions at night",
-    respondentName: "",
-    mediationRequested: false,
-    location: { lat: 14.601, lng: 120.986 },
-  },
-]
-
 interface FileWithPreview extends File {
   preview?: string
 }
 
-// Enhanced Leaflet Map Component with proper CSS loading
+// Error Boundary Component
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700">An error occurred while displaying complaints. Please try again later.</p>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+// Enhanced Leaflet Map Component
 const LocationPicker = ({
   onLocationSelect,
   selectedLocation,
@@ -123,28 +119,24 @@ const LocationPicker = ({
       (position) => {
         const { latitude, longitude } = position.coords
 
-        // Update the map view and add marker
         if (mapInstanceRef.current) {
-          // Remove existing marker
           if (markerRef.current) {
             mapInstanceRef.current.removeLayer(markerRef.current)
           }
 
-          // Add new marker at current location
           import("leaflet").then((L) => {
             markerRef.current = L.marker([latitude, longitude]).addTo(mapInstanceRef.current)
             mapInstanceRef.current.setView([latitude, longitude], 17)
           })
+
+          onLocationSelect(latitude, longitude)
+          setIsGettingLocation(false)
+
+          toast({
+            title: "Location detected",
+            description: `Your current location has been set on the map.`,
+          })
         }
-
-        // Call the callback to update parent component
-        onLocationSelect(latitude, longitude)
-        setIsGettingLocation(false)
-
-        toast({
-          title: "Location detected",
-          description: `Your current location has been set on the map.`,
-        })
       },
       (error) => {
         setIsGettingLocation(false)
@@ -172,59 +164,49 @@ const LocationPicker = ({
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 60000,
-      },
+      }
     )
   }
 
   useEffect(() => {
     if (typeof window !== "undefined" && mapRef.current && !mapInstanceRef.current) {
-      // Load Leaflet CSS first
       const loadLeafletCSS = () => {
         return new Promise<void>((resolve) => {
-          const link = document.createElement('link')
-          link.rel = 'stylesheet'
-          link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
+          const link = document.createElement("link")
+          link.rel = "stylesheet"
+          link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
           link.onload = () => resolve()
           document.head.appendChild(link)
         })
       }
 
-      // Load CSS then initialize map
       loadLeafletCSS().then(() => {
-        // Dynamically import Leaflet
         import("leaflet").then((L) => {
-          // Add null check here to satisfy TypeScript
-          if (!mapRef.current) return
+          if (!mapRef.current || mapInstanceRef.current) return
 
-          // Default location (Manila, Philippines)
           const defaultLat = 14.5995
           const defaultLng = 120.9842
 
-          // Initialize map - now TypeScript knows mapRef.current is not null
-          mapInstanceRef.current = L.map(mapRef.current).setView([defaultLat, defaultLng], 15)
+          mapInstanceRef.current = L.map(mapRef.current, {
+            zoomControl: true,
+            attributionControl: true,
+          }).setView([defaultLat, defaultLng], 15)
 
-          // Add tile layer
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "© OpenStreetMap contributors",
           }).addTo(mapInstanceRef.current)
 
-          // Add click event listener
           mapInstanceRef.current.on("click", (e: any) => {
             const { lat, lng } = e.latlng
 
-            // Remove existing marker
             if (markerRef.current) {
               mapInstanceRef.current.removeLayer(markerRef.current)
             }
 
-            // Add new marker
             markerRef.current = L.marker([lat, lng]).addTo(mapInstanceRef.current)
-
-            // Call callback with coordinates
             onLocationSelect(lat, lng)
           })
 
-          // Set initial marker if location is provided
           if (selectedLocation) {
             markerRef.current = L.marker([selectedLocation.lat, selectedLocation.lng]).addTo(mapInstanceRef.current)
             mapInstanceRef.current.setView([selectedLocation.lat, selectedLocation.lng], 15)
@@ -237,21 +219,23 @@ const LocationPicker = ({
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove()
+        try {
+          mapInstanceRef.current.off()
+          mapInstanceRef.current.remove()
+        } catch (error) {
+          console.warn("Error during map cleanup:", error)
+        }
         mapInstanceRef.current = null
       }
     }
   }, [])
 
-  // Update marker when selectedLocation changes
   useEffect(() => {
     if (mapInstanceRef.current && selectedLocation && mapLoaded) {
-      // Remove existing marker
       if (markerRef.current) {
         mapInstanceRef.current.removeLayer(markerRef.current)
       }
 
-      // Add new marker
       import("leaflet").then((L) => {
         markerRef.current = L.marker([selectedLocation.lat, selectedLocation.lng]).addTo(mapInstanceRef.current)
         mapInstanceRef.current.setView([selectedLocation.lat, selectedLocation.lng], 15)
@@ -287,12 +271,12 @@ const LocationPicker = ({
           )}
         </Button>
       </div>
-      
+
       <div className="relative">
-        <div 
-          ref={mapRef} 
-          className="w-full h-64 rounded-lg border border-border bg-gray-100 z-0" 
-          style={{ minHeight: "256px" }} 
+        <div
+          ref={mapRef}
+          className="w-full h-64 rounded-lg border border-border bg-gray-100 z-0"
+          style={{ minHeight: "256px" }}
         />
         {!mapLoaded && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg border border-border">
@@ -303,7 +287,7 @@ const LocationPicker = ({
           </div>
         )}
       </div>
-      
+
       <p className="text-xs text-muted-foreground mt-2">
         Click on the map to select the location of your complaint, or use the "Use My Location" button to automatically
         detect your current position
@@ -378,24 +362,28 @@ const getPriorityColor = (priority: string) => {
 }
 
 export default function ComplaintsPage() {
+  const { toast } = useToast()
+
+  const { data: complaints, isLoading, error } = useComplaints()
+  const createComplaint = useCreateComplaint()
+
   const [formData, setFormData] = useState({
-    complainantName: "",
-    contactNumber: "",
-    email: "",
+    fullname: "",
+    contact_number: "",
+    email_address: "",
     address: "",
-    complaintType: "",
+    type: "",
     subject: "",
-    description: "",
-    respondentName: "",
-    respondentAddress: "",
-    requestMediation: false,
-    agreeToTerms: false,
+    detailed_description: "",
+    respondent_name: "",
+    respondent_address: "",
+    request_mediation: false,
+    agree_to_terms: false,
   })
   const [files, setFiles] = useState<FileWithPreview[]>([])
   const [previewFile, setPreviewFile] = useState<FileWithPreview | null>(null)
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { toast } = useToast()
 
   const handleLocationSelect = (lat: number, lng: number) => {
     setSelectedLocation({ lat, lng })
@@ -407,7 +395,6 @@ export default function ComplaintsPage() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || [])
-    // Validate file types
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "video/mp4", "video/mov", "video/avi"]
     const maxSize = 10 * 1024 * 1024 // 10MB
 
@@ -431,7 +418,6 @@ export default function ComplaintsPage() {
       return true
     })
 
-    // Create preview URLs for valid files
     const filesWithPreview = validFiles.map((file) => {
       const fileWithPreview = file as FileWithPreview
       if (file.type.startsWith("image/")) {
@@ -448,7 +434,6 @@ export default function ComplaintsPage() {
       })
     }
 
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -474,9 +459,9 @@ export default function ComplaintsPage() {
     return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.agreeToTerms) {
+    if (!formData.agree_to_terms) {
       toast({
         title: "Please agree to the terms and conditions",
         variant: "destructive",
@@ -484,47 +469,58 @@ export default function ComplaintsPage() {
       return
     }
 
-    // Generate reference number
-    const refNumber = `CM-2025-${String(Date.now()).slice(-6)}`
-
-    // Include location data in submission
-    const submissionData = {
-      ...formData,
-      location: selectedLocation,
-      files: files.length,
-      referenceNumber: refNumber,
+    if (!selectedLocation) {
+      toast({
+        title: "Location required",
+        description: "Please select a location for the complaint.",
+        variant: "destructive",
+      })
+      return
     }
 
-    console.log("Complaint submission data:", submissionData)
+    const formDataToSend = new FormData()
+    formDataToSend.append("type", formData.type)
+    formDataToSend.append("fullname", formData.fullname)
+    formDataToSend.append("contact_number", formData.contact_number)
+    formDataToSend.append("email_address", formData.email_address)
+    formDataToSend.append("address", formData.address)
+    formDataToSend.append("subject", formData.subject)
+    formDataToSend.append("detailed_description", formData.detailed_description)
+    formDataToSend.append("respondent_name", formData.respondent_name)
+    formDataToSend.append("respondent_address", formData.respondent_address)
+    formDataToSend.append("latitude", selectedLocation.lat.toString())
+    formDataToSend.append("longitude", selectedLocation.lng.toString())
+    formDataToSend.append("request_mediation", formData.request_mediation.toString())
 
-    toast({
-      title: "Complaint submitted successfully!",
-      description: `Your complaint has been recorded with ${files.length} attachment(s) and location data. Reference number: ${refNumber}`,
+    files.forEach((file, index) => {
+      formDataToSend.append(`evidence[${index}]`, file)
     })
 
-    // Reset form and files
-    setFormData({
-      complainantName: "",
-      contactNumber: "",
-      email: "",
-      address: "",
-      complaintType: "",
-      subject: "",
-      description: "",
-      respondentName: "",
-      respondentAddress: "",
-      requestMediation: false,
-      agreeToTerms: false,
-    })
-
-    // Clean up file previews
-    files.forEach((file) => {
-      if (file.preview) {
-        URL.revokeObjectURL(file.preview)
-      }
-    })
-    setFiles([])
-    setSelectedLocation(null)
+    try {
+      await createComplaint.mutateAsync(formDataToSend)
+      setFormData({
+        fullname: "",
+        contact_number: "",
+        email_address: "",
+        address: "",
+        type: "",
+        subject: "",
+        detailed_description: "",
+        respondent_name: "",
+        respondent_address: "",
+        request_mediation: false,
+        agree_to_terms: false,
+      })
+      files.forEach((file) => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview)
+        }
+      })
+      setFiles([])
+      setSelectedLocation(null)
+    } catch (error) {
+      // Error handling is managed by the mutation's onError
+    }
   }
 
   return (
@@ -544,21 +540,20 @@ export default function ComplaintsPage() {
             </TabsTrigger>
             <TabsTrigger value="track" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              My Complaints ({mockComplaints.length})
+              My Complaints ({complaints?.length || 0})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="file">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Complaint Types */}
               <div className="lg:col-span-1">
                 <h2 className="text-xl font-semibold mb-4">Complaint Types</h2>
                 <div className="space-y-3">
                   {complaintTypes.map((type) => (
                     <Card
                       key={type.value}
-                      className={`cursor-pointer transition-all ${formData.complaintType === type.value ? "ring-2 ring-primary" : ""}`}
-                      onClick={() => setFormData({ ...formData, complaintType: type.value })}
+                      className={`cursor-pointer transition-all ${formData.type === type.value ? "ring-2 ring-primary" : ""}`}
+                      onClick={() => setFormData({ ...formData, type: type.value })}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center gap-3">
@@ -583,7 +578,6 @@ export default function ComplaintsPage() {
                 </Card>
               </div>
 
-              {/* Complaint Form */}
               <div className="lg:col-span-2">
                 <Card>
                   <CardHeader>
@@ -595,32 +589,32 @@ export default function ComplaintsPage() {
                       <div className="space-y-4">
                         <h3 className="font-semibold">Complainant Information</h3>
                         <div>
-                          <Label htmlFor="complainantName">Full Name *</Label>
+                          <Label htmlFor="fullname">Full Name *</Label>
                           <Input
-                            id="complainantName"
-                            value={formData.complainantName}
-                            onChange={(e) => setFormData({ ...formData, complainantName: e.target.value })}
+                            id="fullname"
+                            value={formData.fullname}
+                            onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
                             required
                           />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="contactNumber">Contact Number *</Label>
+                            <Label htmlFor="contact_number">Contact Number *</Label>
                             <Input
-                              id="contactNumber"
+                              id="contact_number"
                               type="tel"
-                              value={formData.contactNumber}
-                              onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                              value={formData.contact_number}
+                              onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
                               required
                             />
                           </div>
                           <div>
-                            <Label htmlFor="email">Email Address</Label>
+                            <Label htmlFor="email_address">Email Address</Label>
                             <Input
-                              id="email"
+                              id="email_address"
                               type="email"
-                              value={formData.email}
-                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              value={formData.email_address}
+                              onChange={(e) => setFormData({ ...formData, email_address: e.target.value })}
                             />
                           </div>
                         </div>
@@ -648,18 +642,17 @@ export default function ComplaintsPage() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="description">Detailed Description *</Label>
+                          <Label htmlFor="detailed_description">Detailed Description *</Label>
                           <Textarea
-                            id="description"
+                            id="detailed_description"
                             placeholder="Please provide a detailed description of the incident or issue"
                             className="min-h-[120px]"
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            value={formData.detailed_description}
+                            onChange={(e) => setFormData({ ...formData, detailed_description: e.target.value })}
                             required
                           />
                         </div>
 
-                        {/* File Upload Section */}
                         <div className="space-y-4">
                           <div>
                             <Label>Evidence (Photos/Videos)</Label>
@@ -685,7 +678,6 @@ export default function ComplaintsPage() {
                               />
                             </div>
 
-                            {/* File List */}
                             {files.length > 0 && (
                               <div className="mt-4 space-y-2">
                                 <Label>Attached Files ({files.length})</Label>
@@ -731,7 +723,6 @@ export default function ComplaintsPage() {
                           </div>
                         </div>
 
-                        {/* Location Picker Section */}
                         <div className="space-y-4">
                           <LocationPicker onLocationSelect={handleLocationSelect} selectedLocation={selectedLocation} />
                         </div>
@@ -740,21 +731,21 @@ export default function ComplaintsPage() {
                       <div className="space-y-4">
                         <h3 className="font-semibold">Respondent Information (if applicable)</h3>
                         <div>
-                          <Label htmlFor="respondentName">Respondent Name</Label>
+                          <Label htmlFor="respondent_name">Respondent Name</Label>
                           <Input
-                            id="respondentName"
+                            id="respondent_name"
                             placeholder="Name of the person/entity involved"
-                            value={formData.respondentName}
-                            onChange={(e) => setFormData({ ...formData, respondentName: e.target.value })}
+                            value={formData.respondent_name}
+                            onChange={(e) => setFormData({ ...formData, respondent_name: e.target.value })}
                           />
                         </div>
                         <div>
-                          <Label htmlFor="respondentAddress">Respondent Address</Label>
+                          <Label htmlFor="respondent_address">Respondent Address</Label>
                           <Textarea
-                            id="respondentAddress"
+                            id="respondent_address"
                             placeholder="Address of the respondent (if known)"
-                            value={formData.respondentAddress}
-                            onChange={(e) => setFormData({ ...formData, respondentAddress: e.target.value })}
+                            value={formData.respondent_address}
+                            onChange={(e) => setFormData({ ...formData, respondent_address: e.target.value })}
                           />
                         </div>
                       </div>
@@ -762,9 +753,9 @@ export default function ComplaintsPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="mediation"
-                          checked={formData.requestMediation}
+                          checked={formData.request_mediation}
                           onCheckedChange={(checked) =>
-                            setFormData({ ...formData, requestMediation: checked as boolean })
+                            setFormData({ ...formData, request_mediation: checked as boolean })
                           }
                         />
                         <Label htmlFor="mediation">I would like to request mediation services</Label>
@@ -773,17 +764,21 @@ export default function ComplaintsPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="terms"
-                          checked={formData.agreeToTerms}
-                          onCheckedChange={(checked) => setFormData({ ...formData, agreeToTerms: checked as boolean })}
+                          checked={formData.agree_to_terms}
+                          onCheckedChange={(checked) => setFormData({ ...formData, agree_to_terms: checked as boolean })}
                         />
                         <Label htmlFor="terms" className="text-sm">
                           I certify that the information provided is true and accurate to the best of my knowledge.
                         </Label>
                       </div>
 
-                      <Button type="submit" className="w-full" disabled={!formData.complaintType}>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={!formData.type || createComplaint.isPending}
+                      >
                         <MessageSquare className="h-4 w-4 mr-2" />
-                        Submit Complaint
+                        {createComplaint.isPending ? "Submitting..." : "Submit Complaint"}
                       </Button>
                     </form>
                   </CardContent>
@@ -793,99 +788,151 @@ export default function ComplaintsPage() {
           </TabsContent>
 
           <TabsContent value="track">
-            <div className="mx-auto">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-2">My Complaints</h2>
-                <p className="text-muted-foreground">Track the progress of your submitted complaints</p>
+            <ErrorBoundary>
+              <div className="mx-auto">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold mb-2">My Complaints</h2>
+                  <p className="text-muted-foreground">Track the progress of your submitted complaints</p>
+                </div>
+
+                {isLoading && (
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Loading complaints...</p>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700">Failed to load complaints: {error.message}</p>
+                  </div>
+                )}
+
+                {!isLoading && !error && complaints && complaints.length === 0 && (
+                  <div className="text-center p-6 bg-muted rounded-lg">
+                    <p className="text-muted-foreground">No complaints found.</p>
+                  </div>
+                )}
+
+                {!isLoading && !error && complaints && complaints.length > 0 && (
+                  <div className="space-y-4">
+                    {complaints.map((complaint) => (
+                      <Card key={complaint.id}>
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-lg">{complaint.subject}</CardTitle>
+                              <CardDescription>
+                                {complaint.type} • Reference: {complaint.reference_number}
+                              </CardDescription>
+                            </div>
+                            <div className="flex gap-2">
+                              <Badge className={`${getPriorityColor(complaint.priority)} text-xs`}>
+                                {complaint.priority.toUpperCase()}
+                              </Badge>
+                              <Badge className={`${getStatusColor(complaint.status)} flex items-center gap-1`}>
+                                {getStatusIcon(complaint.status)}
+                                {getStatusText(complaint.status)}
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                              <Label className="text-sm font-medium text-muted-foreground">Date Filed</Label>
+                              <p className="font-medium">{new Date(complaint.date_filed).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-muted-foreground">Location</Label>
+                              <p className="font-medium text-xs">
+                                {typeof complaint.latitude === 'number' && !isNaN(complaint.latitude)
+                                  ? complaint.latitude.toFixed(4)
+                                  : 'N/A'}, 
+                                {typeof complaint.longitude === 'number' && !isNaN(complaint.longitude)
+                                  ? complaint.longitude.toFixed(4)
+                                  : 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-muted-foreground">Evidence Files</Label>
+                              <p className="font-medium">{complaint.evidence.length}</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                              <p className="text-sm">{complaint.detailed_description}</p>
+                            </div>
+                            {complaint.respondent_name && (
+                              <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Respondent</Label>
+                                <p className="text-sm">{complaint.respondent_name}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {complaint.status === "mediation" && (
+                            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-purple-800">
+                                <Users className="h-5 w-5" />
+                                <span className="font-medium">Mediation in Progress</span>
+                              </div>
+                              <p className="text-purple-700 mt-2 text-sm">
+                                A mediation session has been scheduled. You will be contacted with the date and time. Please
+                                prepare any additional evidence or documentation.
+                              </p>
+                            </div>
+                          )}
+
+                          {complaint.status === "resolved" && (
+                            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-green-800">
+                                <CheckCircle className="h-5 w-5" />
+                                <span className="font-medium">Complaint Resolved</span>
+                              </div>
+                              <p className="text-green-700 mt-2 text-sm">
+                                Your complaint has been successfully resolved. If you have any concerns about the
+                                resolution, please contact the barangay office.
+                              </p>
+                            </div>
+                          )}
+
+                          {complaint.evidence.length > 0 && (
+                            <div className="mt-4">
+                              <Label className="text-sm font-medium text-muted-foreground">Evidence</Label>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                                {complaint.evidence.map((evidence) => (
+                                  <div key={evidence.id} className="relative">
+                                    {evidence.file_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                                      <img
+                                        src={evidence.file_url}
+                                        alt="Evidence"
+                                        className="h-20 w-full object-cover rounded-lg"
+                                      />
+                                    ) : (
+                                      <video
+                                        src={evidence.file_url}
+                                        className="h-20 w-full object-cover rounded-lg"
+                                        controls
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              <div className="space-y-4">
-                {mockComplaints.map((complaint) => (
-                  <Card key={complaint.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{complaint.subject}</CardTitle>
-                          <CardDescription>
-                            {complaint.complaintType} • Reference: {complaint.referenceNumber}
-                          </CardDescription>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge className={`${getPriorityColor(complaint.priority)} text-xs`}>
-                            {complaint.priority.toUpperCase()}
-                          </Badge>
-                          <Badge className={`${getStatusColor(complaint.status)} flex items-center gap-1`}>
-                            {getStatusIcon(complaint.status)}
-                            {getStatusText(complaint.status)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Date Submitted</Label>
-                          <p className="font-medium">{new Date(complaint.dateSubmitted).toLocaleDateString()}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Expected Resolution</Label>
-                          <p className="font-medium">{new Date(complaint.estimatedResolution).toLocaleDateString()}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Location</Label>
-                          <p className="font-medium text-xs">
-                            {complaint.location.lat.toFixed(4)}, {complaint.location.lng.toFixed(4)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Description</Label>
-                          <p className="text-sm">{complaint.description}</p>
-                        </div>
-                        {complaint.respondentName && (
-                          <div>
-                            <Label className="text-sm font-medium text-muted-foreground">Respondent</Label>
-                            <p className="text-sm">{complaint.respondentName}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {complaint.status === "mediation" && (
-                        <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                          <div className="flex items-center gap-2 text-purple-800">
-                            <Users className="h-5 w-5" />
-                            <span className="font-medium">Mediation in Progress</span>
-                          </div>
-                          <p className="text-purple-700 mt-2 text-sm">
-                            A mediation session has been scheduled. You will be contacted with the date and time. Please
-                            prepare any additional evidence or documentation.
-                          </p>
-                        </div>
-                      )}
-
-                      {complaint.status === "resolved" && (
-                        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="flex items-center gap-2 text-green-800">
-                            <CheckCircle className="h-5 w-5" />
-                            <span className="font-medium">Complaint Resolved</span>
-                          </div>
-                          <p className="text-green-700 mt-2 text-sm">
-                            Your complaint has been successfully resolved. If you have any concerns about the
-                            resolution, please contact the barangay office.
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+            </ErrorBoundary>
           </TabsContent>
         </Tabs>
 
-        {/* Image Preview Modal */}
         {previewFile && previewFile.preview && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
             <div className="bg-background rounded-lg max-w-4xl max-h-[90vh] overflow-hidden">

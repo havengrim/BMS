@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export type Complaint = {
   id: number;
+  reference_number: string;
   type: string;
   fullname: string;
   contact_number: string;
@@ -15,14 +16,18 @@ export type Complaint = {
   respondent_address: string;
   latitude: number;
   longitude: number;
-  evidence?: string[]; // URL strings for evidence files
+  location: { lat: number; lng: number };
+  date_filed: string;
+  status: string;
+  priority: string;
+  evidence: { id: number; file_url: string }[];
 };
 
-// Fetch all complaints
+// Fetch all complaints for the authenticated user
 export const useComplaints = () => {
   return useQuery<Complaint[], Error>({
     queryKey: ['complaints'],
-    queryFn: () => api.get('/api/complaints/').then(res => res.data),
+    queryFn: () => api.get('/api/complaints/my-complaints/').then(res => res.data),
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 };
@@ -31,7 +36,7 @@ export const useComplaints = () => {
 export const useComplaint = (id: number) => {
   return useQuery<Complaint, Error>({
     queryKey: ['complaint', id],
-    queryFn: () => api.get(`/api/complaints/view/${id}/`).then(res => res.data),
+    queryFn: () => api.get(`/api/complaints/${id}/`).then(res => res.data),
     enabled: !!id,
   });
 };
@@ -43,10 +48,9 @@ export const useCreateComplaint = () => {
 
   return useMutation({
     mutationFn: (data: FormData) =>
-      api.post('/api/complaints/', data, {
+      api.post('/api/complaints/create/', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       }).then(res => res.data),
-
     onSuccess: () => {
       toast({ title: 'Complaint submitted', description: 'Your complaint has been created.' });
       queryClient.invalidateQueries({ queryKey: ['complaints'] });
@@ -57,18 +61,20 @@ export const useCreateComplaint = () => {
   });
 };
 
-// Update complaint by ID (partial or full)
+// Update complaint by ID
 export const useUpdateComplaint = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Complaint> }) =>
-      api.patch(`/api/complaints/edit/${id}/`, data).then(res => res.data),
-
+    mutationFn: ({ id, data }: { id: number; data: FormData }) =>
+      api.put(`/api/complaints/${id}/update/`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then(res => res.data),
     onSuccess: () => {
       toast({ title: 'Complaint updated', description: 'Complaint updated successfully.' });
       queryClient.invalidateQueries({ queryKey: ['complaints'] });
+      queryClient.invalidateQueries({ queryKey: ['complaint'] });
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to update complaint.', variant: 'destructive' });
@@ -83,8 +89,7 @@ export const useDeleteComplaint = () => {
 
   return useMutation({
     mutationFn: (id: number) =>
-      api.delete(`/api/complaints/delete/${id}/`).then(res => res.data),
-
+      api.delete(`/api/complaints/${id}/delete/`).then(res => res.data),
     onSuccess: () => {
       toast({ title: 'Complaint deleted', description: 'Complaint deleted successfully.' });
       queryClient.invalidateQueries({ queryKey: ['complaints'] });

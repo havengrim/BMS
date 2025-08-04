@@ -21,7 +21,7 @@ class BusinessPermitSerializer(serializers.ModelSerializer):
         model = BusinessPermit
         fields = [
             'id', 'business_name', 'business_type', 'owner_name', 'business_address',
-            'contact_number', 'owner_address', 'business_description', 'is_renewal',
+            'contact_number', 'owner_address', 'business_description', 'is_renewal','status', 
             'created_at', 'updated_at', 'user'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'user']

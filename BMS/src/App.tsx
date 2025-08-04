@@ -21,6 +21,7 @@ import Certificates from "./pages/Dashboard/certificates";
 import Announcements from "./pages/Dashboard/announcements";
 import ComplaintsDashboard from "./pages/Dashboard/complaints";
 import Notification from "./pages/Dashboard/notification";
+import BusinessPermitDashboard from "./pages/Dashboard/business";
 
 import { useLoadCurrentUser } from '@/stores/useAccount';
 import { ProtectedRoute } from '@/lib/ProtectedRoute'; // import your ProtectedRoute here
@@ -55,6 +56,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Page />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manage-business"
+            element={
+              <ProtectedRoute>
+                <BusinessPermitDashboard />
               </ProtectedRoute>
             }
           />

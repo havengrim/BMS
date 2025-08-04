@@ -37,6 +37,13 @@ class CertificateRequest(models.Model):
         return f"{self.request_number} - {self.first_name} {self.last_name}"
 
 class BusinessPermit(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('completed', 'Completed')
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="business_permits", null=True)
     business_name = models.CharField(max_length=255)
     business_type = models.CharField(max_length=100)
@@ -46,6 +53,7 @@ class BusinessPermit(models.Model):
     owner_address = models.TextField()
     business_description = models.TextField(blank=True)
     is_renewal = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # <--- NEW FIELD
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -14,11 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Building, FileText, Clock, CheckCircle, AlertTriangle, Package } from "lucide-react";
 import { Footer } from "@/components/footer";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { useBusinessPermits, useCreateBusinessPermit } from "@/stores/useBusinessPermits";
 import { type BusinessPermit } from "@/types/business-permit";
-
+import { useQueryClient } from "@tanstack/react-query";
 const businessTypes = [
   "Retail Store",
   "Restaurant/Food Service",
@@ -89,17 +88,14 @@ export default function BusinessPermitsPage() {
 
   const { toast } = useToast();
   const { user, loading } = useAuthStore();
-  const queryClient = useQueryClient();
   const { data: permits, isLoading, error } = useBusinessPermits();
   const createBusinessPermit = useCreateBusinessPermit();
 
-  // Clear permits cache when user changes (logout/login)
-  useEffect(() => {
-    queryClient.removeQueries({ queryKey: ["business-permits"] });
-  }, [user, queryClient]);
-
   const isResident = user && user.profile?.role && ["resident"].includes(user.profile.role);
-
+ const queryClient = useQueryClient();
+   useEffect(() => {
+    queryClient.removeQueries({ queryKey: ["business-permits"] });
+  }, []);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -372,44 +368,40 @@ export default function BusinessPermitsPage() {
                 </div>
 
                 {isLoading && <p>Loading applications...</p>}
-                {error && (
-                  <p className="text-destructive">Failed to load applications: {error.message}</p>
-                )}
-                {!isLoading && !error && permits?.length === 0 && (
+                {error && <p className="text-destructive">Failed to load applications: {error.message}</p>}
+                {!isLoading && !error && (!permits || permits.length === 0) && (
                   <p className="text-muted-foreground">No business permit applications found.</p>
                 )}
-
-                <div className="space-y-4">
-                  {permits?.map((application: BusinessPermit) => (
-                    <Card key={application.id}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle className="text-lg">{application.business_name}</CardTitle>
-                            <CardDescription>
-                              {application.business_type} • ID: {application.id}
-                              {application.is_renewal && " • Renewal Application"}
-                            </CardDescription>
+                {!isLoading && !error && permits && permits.length > 0 && (
+                  <div className="space-y-4">
+                    {permits.map((application: BusinessPermit) => (
+                      <Card key={application.id}>
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-lg">{application.business_name}</CardTitle>
+                              <CardDescription>
+                                {application.business_type} • ID: {application.id}
+                                {application.is_renewal && " • Renewal Application"}
+                              </CardDescription>
+                            </div>
+                            <Badge className={`${getStatusColor(application.status)} flex items-center gap-1`}>
+                              {getStatusIcon(application.status)}
+                              {getStatusText(application.status)}
+                            </Badge>
                           </div>
-                          <Badge className={`${getStatusColor(application.status)} flex items-center gap-1`}>
-                            {getStatusIcon(application.status)}
-                            {getStatusText(application.status)}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <div>
-                            <Label className="text-sm font-medium text-muted-foreground">Date Submitted</Label>
-                            <p className="font-medium">{new Date(application.created_at).toLocaleDateString()}</p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                              <Label className="text-sm font-medium text-muted-foreground">Date Submitted</Label>
+                              <p className="font-medium">{new Date(application.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-muted-foreground">Owner</Label>
+                              <p className="font-medium">{application.owner_name}</p>
+                            </div>
                           </div>
-                          <div>
-                            <Label className="text-sm font-medium text-muted-foreground">Owner</Label>
-                            <p className="font-medium">{application.owner_name}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
                           <div>
                             <Label className="text-sm font-medium text-muted-foreground">Business Address</Label>
                             <p className="text-sm">{application.business_address}</p>
@@ -426,49 +418,11 @@ export default function BusinessPermitsPage() {
                             <Label className="text-sm font-medium text-muted-foreground">Contact Number</Label>
                             <p className="text-sm">{application.contact_number}</p>
                           </div>
-                        </div>
-
-                        {application.status === "rejected" && (
-                          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <div className="flex items-center gap-2 text-red-800">
-                              <AlertTriangle className="h-5 w-5" />
-                              <span className="font-medium">Application Rejected</span>
-                            </div>
-                            <p className="text-red-700 mt-2 text-sm">
-                              Your application was rejected. Please contact the barangay office for more details.
-                            </p>
-                          </div>
-                        )}
-
-                        {application.status === "approved" && (
-                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-2 text-blue-800">
-                              <CheckCircle className="h-5 w-5" />
-                              <span className="font-medium">Application Approved</span>
-                            </div>
-                            <p className="text-blue-700 mt-2 text-sm">
-                              Your application has been approved and is being processed. You will be notified when the permit is ready for pickup.
-                            </p>
-                          </div>
-                        )}
-
-                        {application.status === "completed" && (
-                          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                            <div className="flex items-center gap-2 text-green-800">
-                              <Package className="h-5 w-5" />
-                              <span className="font-medium">Permit Ready for Pickup</span>
-                            </div>
-                            <p className="text-green-700 mt-2 text-sm">
-                              Your business permit is ready. Please visit the barangay office during office hours
-                              (8:00 AM - 5:00 PM, Monday to Friday) to claim your permit. Bring a valid ID and your
-                              application ID.
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-muted-foreground">

@@ -2,7 +2,6 @@ import * as React from "react"
 import {
   IconCamera,
   IconDashboard,
-  IconDatabase,
   IconFileAi,
   IconFileDescription,
   IconFileWord,
@@ -41,6 +40,11 @@ const data = {
     {
       title: "Certificates",
       url: "/certificates-list",
+      icon: IoDocumentTextOutline,
+    },
+    {
+      title: "Business Permit",
+      url: "/manage-business",
       icon: IoDocumentTextOutline,
     },
     {
@@ -125,11 +129,6 @@ const data = {
     },
   ],
   documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
     {
       name: "Reports",
       url: "#",

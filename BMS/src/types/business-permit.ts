@@ -12,6 +12,7 @@ export type BusinessPermit = {
   is_renewal: boolean;
   status: BusinessPermitStatus;
   created_at: string;
+  updated_at: string;
   user: number;
 };
 

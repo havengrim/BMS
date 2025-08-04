@@ -11,10 +11,15 @@ const BUSINESS_PERMIT_URL = "/api/certificates/business-permits/";
 export const useBusinessPermits = () =>
   useQuery<BusinessPermit[], Error>({
     queryKey: ["business-permits"],
-    queryFn: () => api.get(BUSINESS_PERMIT_URL, { withCredentials: true }).then(res => res.data),
+    queryFn: () =>
+      api.get(BUSINESS_PERMIT_URL, { withCredentials: true }).then(res => {
+        return res.data.map((permit: any) => ({
+          ...permit,
+          id: String(permit.id), // Convert id to string
+        }));
+      }),
     staleTime: 1000 * 60 * 5,
   });
-
 // GET single permit
 export const useBusinessPermit = (id: number | string) =>
   useQuery({
@@ -50,7 +55,7 @@ export const useEditBusinessPermit = () => {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: EditBusinessPermitInput }) =>
-      api.put(`${BUSINESS_PERMIT_URL}/${id}/`, data, { withCredentials: true }).then(res => res.data),
+      api.put(`${BUSINESS_PERMIT_URL}${id}/`, data, { withCredentials: true }).then(res => res.data),
     onSuccess: () => {
       toast({ title: "Updated", description: "Business permit updated successfully." });
       queryClient.invalidateQueries({ queryKey: ["business-permits"] });
