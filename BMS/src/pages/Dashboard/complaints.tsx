@@ -185,32 +185,31 @@ export default function Page() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingComplaint) return;
+  if (!editingComplaint) return;
 
-    const formData = new FormData();
-    formData.append("status", editingComplaint.status);
-    formData.append("priority", editingComplaint.priority);
-    // Add other fields if needed, but for admin, typically only status and priority are updated
-    formData.append("type", editingComplaint.type);
-    formData.append("fullname", editingComplaint.fullname);
-    formData.append("contact_number", editingComplaint.contact_number);
-    formData.append("email_address", editingComplaint.email_address);
-    formData.append("address", editingComplaint.address);
-    formData.append("subject", editingComplaint.subject);
-    formData.append("detailed_description", editingComplaint.detailed_description);
-    formData.append("respondent_name", editingComplaint.respondent_name);
-    formData.append("respondent_address", editingComplaint.respondent_address);
-    formData.append("latitude", String(editingComplaint.latitude));
-    formData.append("longitude", String(editingComplaint.longitude));
+  const formData = new FormData();
+  formData.append("status", editingComplaint.status);
+  formData.append("priority", editingComplaint.priority);
+  formData.append("type", editingComplaint.type);
+  formData.append("fullname", editingComplaint.fullname);
+  formData.append("contact_number", editingComplaint.contact_number);
+  formData.append("email_address", editingComplaint.email_address);
+  formData.append("address", editingComplaint.address);
+  formData.append("subject", editingComplaint.subject);
+  formData.append("detailed_description", editingComplaint.detailed_description);
+  formData.append("respondent_name", editingComplaint.respondent_name);
+  formData.append("respondent_address", editingComplaint.respondent_address);
+  formData.append("latitude", String(editingComplaint.latitude));
+  formData.append("longitude", String(editingComplaint.longitude));
 
-    try {
-      await updateComplaint.mutateAsync({ id: editingComplaint.id, data: formData });
-      setIsEditDialogOpen(false);
-      setEditingComplaint(null);
-    } catch (error) {
-      console.error("Update error:", error);
-    }
-  };
+  try {
+    await updateComplaint.mutateAsync({ id: editingComplaint.id, data: formData });
+    setIsEditDialogOpen(false);
+    setEditingComplaint(null);
+  } catch (error) {
+    console.error("Update error:", error);
+  }
+};
 
   const handleDeleteComplaint = async (id: number) => {
     try {
