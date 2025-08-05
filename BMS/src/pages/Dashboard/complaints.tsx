@@ -14,6 +14,7 @@ import {
   Edit,
   Trash2,
   User,
+  MapPin,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,8 +43,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useComplaints,  useUpdateComplaint, useDeleteComplaint } from "@/stores/useComplaints";
+import { useComplaints, useUpdateComplaint, useDeleteComplaint } from "@/stores/useComplaints";
 import { useAuthStore } from "@/stores/authStore";
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 // Complaint type from hooks
 export type Complaint = {
@@ -65,6 +69,140 @@ export type Complaint = {
   status: string;
   priority: string;
   evidence: { id: number; file_url: string };
+};
+
+// MapViewer Component with Reverse Geocoding
+const MapViewer = ({ latitude, longitude }: { latitude: number; longitude: number }) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [locationName, setLocationName] = useState<string>("Fetching location...");
+
+  useEffect(() => {
+    // Fetch location name using reverse geocoding
+    const fetchLocationName = async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+        );
+        const data = await response.json();
+        if (data && data.display_name) {
+          setLocationName(data.display_name);
+        } else {
+          setLocationName("Location not found");
+        }
+      } catch (error) {
+        console.error("Reverse geocoding error:", error);
+        setLocationName("Failed to fetch location");
+      }
+    };
+
+    fetchLocationName();
+
+    // Initialize map
+    if (!mapRef.current) {
+      console.log("Map container not found");
+      return;
+    }
+
+    const initializeMap = () => {
+      try {
+        // Clean up existing map
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+          markerRef.current = null;
+        }
+
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+
+        console.log("Initializing map with coordinates:", { lat, lng, latitude, longitude });
+
+        // Use fallback coordinates if invalid
+        const validLat = !isNaN(lat) && lat >= -90 && lat <= 90 ? lat : 14.5995;
+        const validLng = !isNaN(lng) && lng >= -180 && lng <= 180 ? lng : 120.9842;
+
+        if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          console.warn("Invalid coordinates, using fallback:", { original: { lat, lng }, fallback: { validLat, validLng } });
+          setMapError("Invalid coordinates provided, showing default location");
+        } else {
+          setMapError(null);
+        }
+
+        // Initialize the map
+        mapInstanceRef.current = L.map(mapRef.current!, {
+        zoomControl: true,
+        attributionControl: true,
+        center: [validLat, validLng],
+        zoom: 15,
+      });
+
+        // Add tile layer
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+          maxZoom: 19,
+        }).addTo(mapInstanceRef.current);
+
+        // Add marker
+        markerRef.current = L.marker([validLat, validLng])
+          .addTo(mapInstanceRef.current)
+          .bindPopup(`Location: ${validLat.toFixed(6)}, ${validLng.toFixed(6)}`);
+
+        // Force map to adjust to container size
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.invalidateSize();
+          }
+        }, 100);
+
+        console.log("Map initialized successfully at:", { lat: validLat, lng: validLng });
+      } catch (err) {
+        console.error("Map initialization error:", err);
+        setMapError("Failed to load map. Please try again.");
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timeout = setTimeout(initializeMap, 100);
+
+    return () => {
+      clearTimeout(timeout);
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.off();
+          mapInstanceRef.current.remove();
+          console.log("Map cleaned up");
+        } catch (error) {
+          console.warn("Error during map cleanup:", error);
+        }
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
+    };
+  }, [latitude, longitude]);
+
+  return (
+    <div className="relative">
+      <div
+        ref={mapRef}
+        className="w-full h-64 rounded-lg border border-border bg-gray-100 z-10"
+        style={{ minHeight: "256px", position: "relative" }}
+      />
+      <p className="text-sm mt-2">{locationName}</p>
+      {mapError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg border border-border z-20">
+          <div className="text-center p-4">
+            <p className="text-sm text-red-600 mb-2">{mapError}</p>
+            <p className="text-xs text-gray-500">
+              Coordinates: {latitude}, {longitude}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const getStatusColor = (status: string) => {
@@ -185,31 +323,45 @@ export default function Page() {
   };
 
   const handleSaveEdit = async () => {
-  if (!editingComplaint) return;
+    if (!editingComplaint) {
+      alert("No complaint selected for editing.");
+      return;
+    }
 
-  const formData = new FormData();
-  formData.append("status", editingComplaint.status);
-  formData.append("priority", editingComplaint.priority);
-  formData.append("type", editingComplaint.type);
-  formData.append("fullname", editingComplaint.fullname);
-  formData.append("contact_number", editingComplaint.contact_number);
-  formData.append("email_address", editingComplaint.email_address);
-  formData.append("address", editingComplaint.address);
-  formData.append("subject", editingComplaint.subject);
-  formData.append("detailed_description", editingComplaint.detailed_description);
-  formData.append("respondent_name", editingComplaint.respondent_name);
-  formData.append("respondent_address", editingComplaint.respondent_address);
-  formData.append("latitude", String(editingComplaint.latitude));
-  formData.append("longitude", String(editingComplaint.longitude));
+    // Validate required fields
+    if (!editingComplaint.status || !editingComplaint.priority) {
+      alert("Status and Priority are required fields.");
+      return;
+    }
 
-  try {
-    await updateComplaint.mutateAsync({ id: editingComplaint.id, data: formData });
-    setIsEditDialogOpen(false);
-    setEditingComplaint(null);
-  } catch (error) {
-    console.error("Update error:", error);
-  }
-};
+    // Validate status and priority values
+    const validStatuses = ["pending", "investigating", "mediation", "resolved"];
+    const validPriorities = ["high", "medium", "low"];
+    if (!validStatuses.includes(editingComplaint.status.toLowerCase())) {
+      alert(`Invalid status value: ${editingComplaint.status}`);
+      return;
+    }
+    if (!validPriorities.includes(editingComplaint.priority.toLowerCase())) {
+      alert(`Invalid priority value: ${editingComplaint.priority}`);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("status", editingComplaint.status);
+    formData.append("priority", editingComplaint.priority);
+
+    try {
+      await updateComplaint.mutateAsync({ id: editingComplaint.id, data: formData });
+      setIsEditDialogOpen(false);
+      setEditingComplaint(null);
+    } catch (error: any) {
+      console.error("Update error:", error);
+      const errorMessage = error.response?.data
+        ? JSON.stringify(error.response.data)
+        : error.message || "Unknown error";
+      alert(`Failed to update complaint: ${errorMessage}`);
+    }
+  };
 
   const handleDeleteComplaint = async (id: number) => {
     try {
@@ -270,7 +422,7 @@ export default function Page() {
         <SidebarInset>
           <SiteHeader />
           <div className="flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-1 flex-col gap-2">
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                 <div className="space-y-6 px-6">
                   {/* Header */}
@@ -349,7 +501,7 @@ export default function Page() {
                         <>
                           <div className="bg-gray-50 p-4 rounded-lg mb-6">
                             <h3 className="font-medium mb-3">Find Complaints</h3>
-                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-center md: justify-between">
                               <div className="flex flex-1 items-center space-x-2">
                                 <Search className="h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -590,7 +742,10 @@ export default function Page() {
                         </div>
 
                         <div className="bg-green-50 p-4 rounded-lg">
-                          <h4 className="font-semibold mb-3">Current Status</h4>
+                          <h4 className="font-semibold mb-3 flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            Current Status and Location
+                          </h4>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <Label className="font-medium">Status:</Label>
@@ -609,14 +764,10 @@ export default function Page() {
                             </div>
                             <div className="col-span-2">
                               <Label className="font-medium">Location:</Label>
-                              <p>
-                                Latitude: {typeof selectedComplaint.latitude === 'string' && !isNaN(parseFloat(selectedComplaint.latitude))
-                                  ? parseFloat(selectedComplaint.latitude).toFixed(6)
-                                  : 'N/A'},
-                                Longitude: {typeof selectedComplaint.longitude === 'string' && !isNaN(parseFloat(selectedComplaint.longitude))
-                                  ? parseFloat(selectedComplaint.longitude).toFixed(6)
-                                  : 'N/A'}
-                              </p>
+                              <MapViewer
+                                latitude={selectedComplaint.latitude}
+                                longitude={selectedComplaint.longitude}
+                              />
                             </div>
                           </div>
                         </div>
@@ -683,7 +834,7 @@ export default function Page() {
                       </DialogTitle>
                       <DialogDescription>Update the status and priority for this complaint</DialogDescription>
                     </DialogHeader>
-                    {editingComplaint && (
+                    {editingComplaint ? (
                       <div className="grid gap-6 py-4">
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <h4 className="font-semibold mb-2">Complaint Summary</h4>
@@ -695,19 +846,19 @@ export default function Page() {
                         <div className="space-y-4">
                           <div>
                             <Label htmlFor="status" className="text-base font-medium">
-                              Update Status
+                              Update Status<span className="text-red-500">*</span>
                             </Label>
                             <p className="text-sm text-muted-foreground mb-2">
                               Choose what stage this complaint is currently in
                             </p>
                             <Select
-                              value={editingComplaint.status}
+                              value={editingComplaint.status || ""}
                               onValueChange={(value: string) =>
                                 setEditingComplaint({ ...editingComplaint, status: value })
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder="Select status" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="pending">Waiting - New complaint to assign</SelectItem>
@@ -720,17 +871,17 @@ export default function Page() {
 
                           <div>
                             <Label htmlFor="priority" className="text-base font-medium">
-                              Priority Level
+                              Priority Level<span className="text-red-500">*</span>
                             </Label>
                             <p className="text-sm text-muted-foreground mb-2">Set how urgent this complaint is</p>
                             <Select
-                              value={editingComplaint.priority}
+                              value={editingComplaint.priority || ""}
                               onValueChange={(value: string) =>
                                 setEditingComplaint({ ...editingComplaint, priority: value })
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder="Select priority" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="high">Urgent - Handle immediately</SelectItem>
@@ -741,6 +892,8 @@ export default function Page() {
                           </div>
                         </div>
                       </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Loading complaint details...</p>
                     )}
                     <DialogFooter className="flex gap-2">
                       <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
@@ -749,7 +902,7 @@ export default function Page() {
                       <Button
                         onClick={handleSaveEdit}
                         className="bg-green-600 hover:bg-green-700"
-                        disabled={updateComplaint.isPending}
+                        disabled={updateComplaint.isPending || !editingComplaint?.status || !editingComplaint?.priority}
                       >
                         {updateComplaint.isPending ? "Saving..." : "Save Changes"}
                       </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState} from "react";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { Footer } from "@/components/footer";
 import { useAuthStore } from "@/stores/authStore";
 import { useBusinessPermits, useCreateBusinessPermit } from "@/stores/useBusinessPermits";
 import { type BusinessPermit } from "@/types/business-permit";
-import { useQueryClient } from "@tanstack/react-query";
+
 const businessTypes = [
   "Retail Store",
   "Restaurant/Food Service",
@@ -92,10 +92,7 @@ export default function BusinessPermitsPage() {
   const createBusinessPermit = useCreateBusinessPermit();
 
   const isResident = user && user.profile?.role && ["resident"].includes(user.profile.role);
- const queryClient = useQueryClient();
-   useEffect(() => {
-    queryClient.removeQueries({ queryKey: ["business-permits"] });
-  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 

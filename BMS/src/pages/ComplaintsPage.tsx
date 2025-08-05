@@ -32,7 +32,7 @@ import {
 import { Footer } from "@/components/footer";
 import { useComplaintByID , useCreateComplaint } from "@/stores/useComplaints";
 import { useAuthStore } from "@/stores/authStore";
-import { useQueryClient } from "@tanstack/react-query";
+
 
 // Complaint type definition
 export type Complaint = {
@@ -366,7 +366,7 @@ export default function ComplaintsPage() {
   const { user, loading } = useAuthStore();
   const { data: complaints, isLoading, error } = useComplaintByID();
   const createComplaint = useCreateComplaint();
-  const queryClient = useQueryClient();
+
 
   const [formData, setFormData] = useState({
     fullname: "",
@@ -387,9 +387,7 @@ export default function ComplaintsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Clear complaints cache when user changes
-  useEffect(() => {
-    queryClient.removeQueries({ queryKey: ["complaints"] });
-  }, [user, queryClient]);
+
 
   const isResident = user && user.profile?.role && ["resident"].includes(user.profile.role);
 
