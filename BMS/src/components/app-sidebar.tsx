@@ -18,6 +18,7 @@ import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { FiAlertOctagon } from "react-icons/fi";
 import { useAuthStore } from "@/stores/authStore"
+import { CiAlignBottom } from "react-icons/ci";
 import {
   Sidebar,
   SidebarContent,
@@ -45,7 +46,7 @@ const data = {
     {
       title: "Business Permit",
       url: "/manage-business",
-      icon: IoDocumentTextOutline,
+      icon: CiAlignBottom,
     },
     {
       title: "Announcements",

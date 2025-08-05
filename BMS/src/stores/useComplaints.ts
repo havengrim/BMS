@@ -20,14 +20,21 @@ export type Complaint = {
   date_filed: string;
   status: string;
   priority: string;
-  evidence: { id: number; file_url: string }[];
+  evidence: { id: number; file_url: string };
 };
 
+export const useComplaintByID = () => {
+  return useQuery<Complaint[], Error>({
+    queryKey: ['complaints'],
+    queryFn: () => api.get('/api/complaints/my-complaints/').then(res => res.data),
+    staleTime: 1000 * 60 * 5,
+  });
+};
 // Fetch all complaints for the authenticated user
 export const useComplaints = () => {
   return useQuery<Complaint[], Error>({
     queryKey: ['complaints'],
-    queryFn: () => api.get('/api/complaints/my-complaints/').then(res => res.data),
+    queryFn: () => api.get('/api/complaints/').then(res => res.data),
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 };
@@ -41,7 +48,6 @@ export const useComplaint = (id: number) => {
   });
 };
 
-// Create complaint (with optional evidence files)
 export const useCreateComplaint = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -49,14 +55,26 @@ export const useCreateComplaint = () => {
   return useMutation({
     mutationFn: (data: FormData) =>
       api.post('/api/complaints/create/', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data', // 👈 explicitly set
+        },
       }).then(res => res.data),
+
     onSuccess: () => {
-      toast({ title: 'Complaint submitted', description: 'Your complaint has been created.' });
+      toast({
+        title: 'Complaint submitted',
+        description: 'Your complaint has been created.',
+      });
       queryClient.invalidateQueries({ queryKey: ['complaints'] });
     },
-    onError: () => {
-      toast({ title: 'Error', description: 'Failed to submit complaint.', variant: 'destructive' });
+
+    onError: (error: any) => {
+      console.error('Submission error:', error.response?.data || error.message);
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to submit complaint.',
+        variant: 'destructive',
+      });
     },
   });
 };

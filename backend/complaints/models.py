@@ -19,6 +19,7 @@ class Complaint(models.Model):
     status = models.CharField(max_length=50, default='pending')
     priority = models.CharField(max_length=50, default='medium')
     reference_number = models.CharField(max_length=50, unique=True, blank=True)
+    evidence = models.FileField(upload_to='complaint_evidence/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.subject} by {self.fullname}"
@@ -30,7 +31,3 @@ class Complaint(models.Model):
             self.reference_number = f"CM-{timezone.now().year}-{str(self.id).zfill(6)}"
             return super().save(update_fields=['reference_number'])  # Only update the ref num
         return super().save(*args, **kwargs)
-
-class ComplaintEvidence(models.Model):
-    complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='evidence')
-    file = models.FileField(upload_to='complaint_evidence/')
