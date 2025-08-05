@@ -525,17 +525,16 @@ export default function Page() {
                   </Card>
                 </div>
 
-                {/* View Complaint Dialog */}
                 <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
                   <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Eye className="h-5 w-5" />
-                        View Details - {selectedComplaint?.reference_number}
+                        View Details - {selectedComplaint?.reference_number || "Loading..."}
                       </DialogTitle>
                       <DialogDescription>All information about this complaint (read-only)</DialogDescription>
                     </DialogHeader>
-                    {selectedComplaint && (
+                    {selectedComplaint ? (
                       <div className="grid gap-6 py-4">
                         <div className="bg-blue-50 p-4 rounded-lg">
                           <h4 className="font-semibold mb-3 flex items-center gap-2">
@@ -545,7 +544,7 @@ export default function Page() {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <Label className="font-medium">Full Name:</Label>
-                              <p>{selectedComplaint.fullname}</p>
+                              <p>{selectedComplaint.fullname || "N/A"}</p>
                             </div>
                             <div>
                               <Label className="font-medium">Contact Number:</Label>
@@ -570,21 +569,21 @@ export default function Page() {
                           <div className="space-y-3 text-sm">
                             <div>
                               <Label className="font-medium">Problem Title:</Label>
-                              <p>{selectedComplaint.subject}</p>
+                              <p>{selectedComplaint.subject || "N/A"}</p>
                             </div>
                             <div>
                               <Label className="font-medium">Full Description:</Label>
-                              <p className="bg-white p-3 rounded border">{selectedComplaint.detailed_description}</p>
+                              <p className="bg-white p-3 rounded border">{selectedComplaint.detailed_description || "N/A"}</p>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <Label className="font-medium">Category:</Label>
-                                <Badge variant="outline">{selectedComplaint.type}</Badge>
+                                <Badge variant="outline">{selectedComplaint.type || "N/A"}</Badge>
                               </div>
                               <div>
                                 <Label className="font-medium">Priority Level:</Label>
                                 <Badge className={getPriorityColor(selectedComplaint.priority)}>
-                                  {getPriorityDisplay(selectedComplaint.priority)}
+                                  {getPriorityDisplay(selectedComplaint.priority) || "N/A"}
                                 </Badge>
                               </div>
                             </div>
@@ -598,21 +597,26 @@ export default function Page() {
                               <Label className="font-medium">Status:</Label>
                               <div className="flex items-center gap-2">
                                 <Badge className={getStatusColor(selectedComplaint.status)}>
-                                  {getStatusDisplay(selectedComplaint.status)}
+                                  {getStatusDisplay(selectedComplaint.status) || "N/A"}
                                 </Badge>
                                 <span className="text-xs text-muted-foreground">
-                                  ({getStatusExplanation(selectedComplaint.status)})
+                                  ({getStatusExplanation(selectedComplaint.status) || "No status available"})
                                 </span>
                               </div>
                             </div>
                             <div>
                               <Label className="font-medium">Date Reported:</Label>
-                              <p>{new Date(selectedComplaint.date_filed).toLocaleDateString()}</p>
+                              <p>{selectedComplaint.date_filed ? new Date(selectedComplaint.date_filed).toLocaleDateString() : "N/A"}</p>
                             </div>
                             <div className="col-span-2">
                               <Label className="font-medium">Location:</Label>
                               <p>
-                                Latitude: {selectedComplaint.latitude.toFixed(6)}, Longitude: {selectedComplaint.longitude.toFixed(6)}
+                                Latitude: {typeof selectedComplaint.latitude === 'string' && !isNaN(parseFloat(selectedComplaint.latitude))
+                                  ? parseFloat(selectedComplaint.latitude).toFixed(6)
+                                  : 'N/A'},
+                                Longitude: {typeof selectedComplaint.longitude === 'string' && !isNaN(parseFloat(selectedComplaint.longitude))
+                                  ? parseFloat(selectedComplaint.longitude).toFixed(6)
+                                  : 'N/A'}
                               </p>
                             </div>
                           </div>
@@ -624,7 +628,7 @@ export default function Page() {
                             <div className="grid grid-cols-2 gap-4 text-sm">
                               <div>
                                 <Label className="font-medium">Name:</Label>
-                                <p>{selectedComplaint.respondent_name}</p>
+                                <p>{selectedComplaint.respondent_name || "N/A"}</p>
                               </div>
                               <div>
                                 <Label className="font-medium">Address:</Label>
@@ -634,25 +638,33 @@ export default function Page() {
                           </div>
                         )}
 
-                        {selectedComplaint.evidence.file_url && (
-                          <div className="bg-purple-50 p-4 rounded-lg">
-                            <h4 className="font-semibold mb-3">Evidence</h4>
-                            {/\.(jpg|jpeg|png|gif)$/i.test(selectedComplaint.evidence.file_url) ? (
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                          <h4 className="font-semibold mb-3">Evidence</h4>
+                          {selectedComplaint.evidence && selectedComplaint.evidence.file_url ? (
+                            /\.(jpg|jpeg|png|gif)$/i.test(selectedComplaint.evidence.file_url) ? (
                               <img
                                 src={selectedComplaint.evidence.file_url}
                                 alt="Evidence"
                                 className="w-auto max-w-full max-h-72 object-contain rounded-lg"
+                                onError={() => console.error("Failed to load image:", selectedComplaint.evidence.file_url)}
                               />
-                            ) : (
+                            ) : /\.(mp4|webm|ogg)$/i.test(selectedComplaint.evidence.file_url) ? (
                               <video
                                 src={selectedComplaint.evidence.file_url}
                                 className="w-auto max-w-full max-h-72 object-contain rounded-lg"
                                 controls
+                                onError={() => console.error("Failed to load video:", selectedComplaint.evidence.file_url)}
                               />
-                            )}
-                          </div>
-                        )}
+                            ) : (
+                              <p className="text-sm text-muted-foreground">Unsupported file type or invalid URL</p>
+                            )
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No evidence provided for this complaint.</p>
+                          )}
+                        </div>
                       </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Loading complaint details...</p>
                     )}
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
