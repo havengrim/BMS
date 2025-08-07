@@ -131,8 +131,8 @@ const data = {
   ],
   documents: [
     {
-      name: "Reports",
-      url: "#",
+      name: "Blotter Reports",
+      url: "/manage-blotter",
       icon: IconReport,
     },
     {

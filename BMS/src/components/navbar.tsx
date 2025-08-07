@@ -12,7 +12,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, FileText, Users, MessageSquare, User, LogOut } from "lucide-react";
+import { Menu, FileText, Users, MessageSquare, User, LogOut, Notebook } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -45,6 +45,12 @@ const services = [
     description: "Submit complaints and incident reports",
     icon: MessageSquare,
   },
+  {
+  title: "Blotter Reports",
+  href: "/blotter",
+  description: "Log incidents and generate blotter reports",
+  icon: Notebook,
+}
 ];
 
 export function Navbar() {
@@ -162,7 +168,7 @@ export function Navbar() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
                     <User className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>

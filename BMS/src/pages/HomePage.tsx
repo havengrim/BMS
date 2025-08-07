@@ -4,24 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Navbar } from "@/components/navbar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import {
-  FileText,
-  Users,
-  MessageSquare,
-  Phone,
-  MapPin,
-  ArrowRight,
-  Award,
-  TrendingUp,
-  Heart,
-  Shield,
-  Mail,
-  Target,
-  Eye,
-} from "lucide-react"
+import { FileText, Users, MessageSquare, Phone, MapPin, ArrowRight, Award, TrendingUp, Heart, Shield, Mail, Target, Eye, AlertTriangle } from 'lucide-react'
 import { AnnouncementGallery } from "@/components/announcement-gallery"
 import images from "@/assets/images"
 import { Footer } from "@/components/footer"
+import { EmergencyModal } from "@/components/emergency-modal"
 
 const services = [
   {
@@ -132,7 +119,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
+      
       {/* Hero Section */}
       <section
         className="relative py-20 sm:py-24 text-white"
@@ -314,7 +301,6 @@ export default function HomePage() {
               The guiding principles that drive our commitment to serve the Sindalan community
             </p>
           </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto mb-12">
             {/* Mission Card */}
             <Card className="hover:shadow-lg transition-all duration-300">
@@ -344,7 +330,6 @@ export default function HomePage() {
                 </div>
               </CardContent>
             </Card>
-
             {/* Vision Card */}
             <Card className="hover:shadow-lg transition-all duration-300">
               <CardHeader>
@@ -373,7 +358,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </div>
-
           {/* Core Values */}
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
@@ -477,7 +461,7 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-          {/* Emergency Contact */}
+          {/* Emergency Contact with Modal */}
           <div className="mt-16 max-w-7xl mx-auto">
             <Card className="border-red-200 bg-red-50">
               <CardHeader className="text-center">
@@ -490,6 +474,23 @@ export default function HomePage() {
                 </CardDescription>
                 <div className="text-2xl font-bold text-red-800 mt-2">0917-EMERGENCY (0917-363-7436)</div>
                 <div className="text-sm text-red-600 mt-2">Available 24/7 for emergencies only</div>
+                
+                {/* Emergency Report Button */}
+                <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button asChild className="bg-red-600 hover:bg-red-700">
+                    <a href="tel:0917-363-7436">
+                      <Phone className="h-4 w-4 mr-2" />
+                      Call Emergency Hotline
+                    </a>
+                  </Button>
+                  
+                  <EmergencyModal>
+                    <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Submit Emergency Report
+                    </Button>
+                  </EmergencyModal>
+                </div>
               </CardHeader>
             </Card>
           </div>

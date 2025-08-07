@@ -1,10 +1,10 @@
+# urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import EmergencyReportViewSet, EmergencyFeedbackViewSet
+from .views import EmergencyReportViewSet
 
 router = DefaultRouter()
-router.register(r'reports', EmergencyReportViewSet, basename='emergency-report')
-router.register(r'feedbacks', EmergencyFeedbackViewSet, basename='emergency-feedback')
+router.register(r'', EmergencyReportViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

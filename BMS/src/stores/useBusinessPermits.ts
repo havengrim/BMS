@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import type { BusinessPermit, CreateBusinessPermitInput, EditBusinessPermitInput } from "@/types/business-permit";
 
-const BUSINESS_PERMIT_URL = "/api/certificates/business-permits/";
+const BUSINESS_PERMIT_URL = "/api/certificates/business-permits";
 
 // GET all permits
 export const useBusinessPermits = () =>

@@ -4,6 +4,19 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.idcard-html2canvas-fix {
+  --background: #2563EB !important;
+  --primary: #2563EB !important;
+  --foreground: #1E3A8A !important;
+  --card: #ffffff !important;
+  --card-foreground: #1E3A8A !important;
+  --popover: #ffffff !important;
+  --popover-foreground: #1E3A8A !important;
+  --border: #D1D5DB !important;
+  --ring: #2563EB !important;
+  /* Add any other variables you use on the ID card */
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

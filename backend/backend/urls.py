@@ -10,8 +10,8 @@ urlpatterns = [
     path('api/certificates/', include('certificates.urls')),
     path('api/complaints/', include('complaints.urls')),
     path('api/chatbot/', include('chatbot.urls')),
-    path('api/emergency/', include('emergency.urls')),
-    path('api/blotter/', include('blotter.urls')),
+    path('api/emergencies/', include('emergency.urls')),
+    path('api/blotters/', include('blotter.urls')),
 ]
 
 # Serve media files in development
