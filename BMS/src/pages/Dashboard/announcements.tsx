@@ -474,14 +474,15 @@ export default function AnnouncementsPage() {
                                     </AvatarFallback>
                                   </Avatar>
                                 </TableCell>
-                                <TableCell>
-                                  <div>
+                                  <TableCell className="max-w-[200px] overflow-hidden">
+                                  <div className="min-w-0">
                                     <div className="font-medium">{announcement.title}</div>
-                                    <div className="text-sm text-muted-foreground line-clamp-1">
+                                    <div className="text-sm text-muted-foreground truncate">
                                       {announcement.description}
                                     </div>
                                   </div>
                                 </TableCell>
+
                                 <TableCell>
                                   <Badge className={getStatusColor(announcement.status)}>
                                     {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}

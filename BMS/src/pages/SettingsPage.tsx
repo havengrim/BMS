@@ -11,15 +11,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Download, Save, Settings, Upload, Camera, IdCard } from 'lucide-react';
+import { CalendarIcon, Download, Save, Settings, Upload, Camera, IdCard } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/navbar";
 import { useUser, useUpdateUser } from "@/stores/useUsers";
+import { useAuthStore } from "@/stores/authStore";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
 
-// Define the UserProfile interface to match the expected API data structure
 interface UserProfile {
   id: number;
   username: string;
@@ -36,45 +38,113 @@ interface UserProfile {
 }
 
 export default function SettingsPage() {
-  const userId = 3;
-  const { data: userData, isLoading } = useUser(userId); // Removed unused 'error'
+  // Hooks
+  const userId = useAuthStore((state) => {
+    const id = state.user?.id;
+    console.log("userId from useAuthStore:", id);
+    return id;
+  });
+  const { data: userData, isLoading, error } = useUser(userId!);
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isGeneratingId, setIsGeneratingId] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [barangayId, setBarangayId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const idCardRef = useRef<HTMLDivElement>(null);
+  // Use userData directly, with fallback for initial state
   const [formData, setFormData] = useState<UserProfile | null>(null);
 
+  // Redirect to login if userId is undefined
+  useEffect(() => {
+    if (userId === undefined) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to access your settings.",
+        variant: "destructive",
+      });
+      navigate("/login");
+    }
+  }, [userId, navigate, toast]);
+
+  // Sync formData with userData
   useEffect(() => {
     if (userData) {
-      setFormData(userData as UserProfile);
-      setSelectedDate(userData.profile.birthdate ? new Date(userData.profile.birthdate) : undefined);
+      const defaultProfile: UserProfile["profile"] = {
+        name: "",
+        contact_number: "",
+        address: "",
+        civil_status: "single",
+        birthdate: "",
+        role: "",
+        image: null,
+      };
+      setFormData({
+        id: userData.id,
+        username: userData.username,
+        email: userData.email,
+        profile: {
+          ...defaultProfile,
+          ...userData.profile,
+        },
+      });
+      setSelectedDate(userData.profile?.birthdate ? new Date(userData.profile.birthdate) : undefined);
     }
   }, [userData]);
 
+  // Cleanup image URL
+  useEffect(() => {
+    return () => {
+      if (imageFile) {
+        URL.revokeObjectURL(URL.createObjectURL(imageFile));
+      }
+    };
+  }, [imageFile]);
+
+  // Handle loading or error states
+  if (isLoading || error || userId === undefined) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          {isLoading && (
+            <>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <div>Loading user data...</div>
+            </>
+          )}
+          {error && <div className="text-red-500">Error: {error.message}</div>}
+          {userId === undefined && <div>Please log in to continue.</div>}
+          {error && <Button onClick={() => navigate("/login")}>Return to Login</Button>}
+        </div>
+      </div>
+    );
+  }
+
+  // Handle input changes
   const handleInputChange = (field: string, value: string, isProfile = false) => {
-    if (!formData) return;
-    if (isProfile) {
-      setFormData((prev) => ({
-        ...prev!,
-        profile: {
-          ...prev!.profile,
-          [field]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev!,
+    setFormData((prev) => {
+      if (!prev) return prev;
+      if (isProfile) {
+        return {
+          ...prev,
+          profile: {
+            ...prev.profile,
+            [field]: value,
+          },
+        };
+      }
+      return {
+        ...prev,
         [field]: value,
-      }));
-    }
+      };
+    });
   };
 
   const handleDateChange = (date: Date | undefined) => {
-    if (date && formData) {
+    if (date) {
       setSelectedDate(date);
       handleInputChange("birthdate", format(date, "yyyy-MM-dd"), true);
     }
@@ -83,12 +153,49 @@ export default function SettingsPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const validTypes = ["image/jpeg", "image/png", "image/gif"];
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a JPG, PNG, or GIF image.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (file.size > maxSize) {
+        toast({
+          title: "File Too Large",
+          description: "Image size must be less than 2MB.",
+          variant: "destructive",
+        });
+        return;
+      }
       setImageFile(file);
+      console.log("Selected file:", { name: file.name, type: file.type, size: file.size });
     }
   };
 
   const handleSaveSettings = () => {
-    if (!formData) return;
+    if (!formData || !userId) {
+      toast({
+        title: "Error",
+        description: "User data or ID not available.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic validation
+    if (!formData.username || !formData.email || !formData.profile.name) {
+      toast({
+        title: "Validation Error",
+        description: "Username, email, and full name are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const data = new FormData();
     data.append("username", formData.username);
     data.append("email", formData.email);
@@ -99,19 +206,26 @@ export default function SettingsPage() {
     data.append("profile.birthdate", formData.profile.birthdate);
     data.append("profile.role", formData.profile.role);
     if (imageFile) {
-      data.append("image", imageFile);
+      data.append("profile.image", imageFile);
     }
 
     updateUser(
       { id: userId, data },
       {
         onSuccess: () => {
-          toast({ title: "Success", description: "Profile updated successfully." });
+          // Invalidate query to ensure fresh data is fetched
+          queryClient.invalidateQueries({ queryKey: ['user', userId] });
+          setImageFile(null); // Reset image file after successful upload
+          toast({
+            title: "Success",
+            description: "Profile updated successfully.",
+          });
         },
-        onError: () => {
+        onError: (error: any) => {
+          console.error("Update error:", error);
           toast({
             title: "Error",
-            description: "Failed to update profile.",
+            description: error.message || "Failed to update profile.",
             variant: "destructive",
           });
         },
@@ -120,6 +234,14 @@ export default function SettingsPage() {
   };
 
   const generateBarangayId = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID not available.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsGeneratingId(true);
     toast({
       title: "Generating ID",
@@ -137,8 +259,18 @@ export default function SettingsPage() {
     });
   };
 
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(new Image());
+      img.src = src;
+    });
+  };
+
   const downloadIdAsPDF = async () => {
-    if (!idCardRef.current) return;
+    if (!idCardRef.current || !formData) return;
 
     setIsDownloading(true);
     toast({
@@ -149,27 +281,21 @@ export default function SettingsPage() {
     try {
       const width = 480;
       const height = 300;
-      const scale = 2; // For higher resolution
-
-      // Create a canvas element
+      const scale = 2;
       const canvas = document.createElement("canvas");
       canvas.width = width * scale;
       canvas.height = height * scale;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Canvas context not available");
 
-      // Draw background with gradient
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
       gradient.addColorStop(0, "#065f46");
       gradient.addColorStop(1, "#4b5563");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw header background
       ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
       ctx.fillRect(0, 0, canvas.width, 48 * scale);
-
-      // Draw header border
       ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
       ctx.lineWidth = 1 * scale;
       ctx.beginPath();
@@ -177,7 +303,6 @@ export default function SettingsPage() {
       ctx.lineTo(canvas.width, 48 * scale);
       ctx.stroke();
 
-      // Draw header text
       ctx.fillStyle = "white";
       ctx.font = `${14 * scale}px Arial`;
       ctx.textAlign = "center";
@@ -186,87 +311,57 @@ export default function SettingsPage() {
       ctx.fillText("BARANGAY IDENTIFICATION CARD", canvas.width / 2, 32 * scale);
       ctx.font = `${10 * scale}px Arial`;
       ctx.globalAlpha = 0.8;
-      ctx.fillText("SINDALAN SANFERNANDO, PAMPANGA", canvas.width / 2, 42 * scale);
+      ctx.fillText("MAIMPIS, PAMPANGA", canvas.width / 2, 42 * scale);
       ctx.globalAlpha = 1.0;
 
-      // Draw photo container
       ctx.fillStyle = "white";
       ctx.fillRect(16 * scale, 64 * scale, 80 * scale, 96 * scale);
       ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
       ctx.lineWidth = 2 * scale;
       ctx.strokeRect(16 * scale, 64 * scale, 80 * scale, 96 * scale);
 
-      // Load and draw profile image
-      let imageSrc = formData?.profile.image || "/placeholder.svg";
-      try {
-        const response = await fetch(imageSrc, { method: "HEAD" });
-        if (!response.ok) {
-          console.warn("Profile image inaccessible, using placeholder");
-          imageSrc = "/placeholder.svg";
-        }
-      } catch {
-        console.warn("Profile image fetch failed, using placeholder");
-        imageSrc = "/placeholder.svg";
-      }
-
-      const photo = new Image();
-      photo.crossOrigin = "anonymous";
-      await new Promise((resolve) => {
-        photo.onload = () => resolve(photo);
-        photo.onerror = () => {
-          console.warn("Failed to load profile image, skipping");
-          resolve(new Image()); // Continue without photo
-        };
-        photo.src = imageSrc;
-      });
-
+      const imageSrc = imageFile ? URL.createObjectURL(imageFile) : formData.profile.image || "/placeholder.svg";
+      const photo = await loadImage(imageSrc);
       if (photo.width > 0) {
         ctx.drawImage(photo, 16 * scale, 64 * scale, 80 * scale, 96 * scale);
       }
 
-      // Draw info section with extra spacing
       ctx.fillStyle = "white";
       ctx.textAlign = "left";
       ctx.font = `${12 * scale}px Arial`;
       let x = 112 * scale;
       let y = 64 * scale;
 
-      // ID Number
       ctx.globalAlpha = 0.75;
       ctx.fillText("ID NO:", x, y);
       ctx.globalAlpha = 1.0;
-      ctx.fillStyle = "#fef08a"; // Yellow-300
+      ctx.fillStyle = "#fef08a";
       ctx.font = `${12 * scale}px Arial bold`;
       ctx.fillText(barangayId || "N/A", x, y + 12 * scale);
       ctx.fillStyle = "white";
       ctx.font = `${12 * scale}px Arial`;
 
-      // Name with extra 8px spacing
-      y += 24 * scale + 8 * scale;
+      y += 32 * scale;
       ctx.globalAlpha = 0.75;
       ctx.fillText("NAME:", x, y);
       ctx.globalAlpha = 1.0;
       ctx.font = `${14 * scale}px Arial bold`;
-      const name = formData?.profile.name ? formData.profile.name.toUpperCase() : "N/A";
-      ctx.fillText(name, x, y + 12 * scale);
+      ctx.fillText(formData.profile.name.toUpperCase() || "N/A", x, y + 12 * scale);
       ctx.font = `${12 * scale}px Arial`;
 
-      // Address with extra 8px spacing
-      y += 24 * scale + 8 * scale;
+      y += 32 * scale;
       ctx.globalAlpha = 0.75;
       ctx.fillText("ADDRESS:", x, y);
       ctx.globalAlpha = 1.0;
       ctx.font = `${10 * scale}px Arial`;
-      const address = formData?.profile.address || "N/A";
+      const address = formData.profile.address || "N/A";
       const addressLines = splitText(address, ctx, 300 * scale);
       addressLines.forEach((line, index) => {
         ctx.fillText(line, x, y + 12 * scale + index * 12 * scale);
       });
 
-      // Grid section, adjusted for spacing
-      y = 192 * scale; // Adjusted due to extra spacing
+      y = 192 * scale;
       ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-      ctx.lineWidth = 1 * scale;
       ctx.beginPath();
       ctx.moveTo(16 * scale, y);
       ctx.lineTo(canvas.width - 16 * scale, y);
@@ -277,11 +372,11 @@ export default function SettingsPage() {
       const gridItems = [
         {
           label: "BIRTHDATE:",
-          value: formData?.profile.birthdate ? format(new Date(formData.profile.birthdate), "MM/dd/yyyy") : "N/A",
+          value: formData.profile.birthdate ? format(new Date(formData.profile.birthdate), "MM/dd/yyyy") : "N/A",
         },
-        { label: "CIVIL STATUS:", value: formData?.profile.civil_status || "N/A" },
-        { label: "CONTACT:", value: formData?.profile.contact_number || "N/A" },
-        { label: "ROLE:", value: formData?.profile.role || "N/A" },
+        { label: "CIVIL STATUS:", value: formData.profile.civil_status || "N/A" },
+        { label: "CONTACT:", value: formData.profile.contact_number || "N/A" },
+        { label: "ROLE:", value: formData.profile.role || "N/A" },
       ];
 
       gridItems.forEach((item, index) => {
@@ -297,8 +392,7 @@ export default function SettingsPage() {
         ctx.font = `${10 * scale}px Arial`;
       });
 
-      // Footer section, adjusted for spacing
-      y = 264 * scale; // Adjusted due to extra spacing
+      y = 264 * scale;
       ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
       ctx.beginPath();
       ctx.moveTo(16 * scale, y);
@@ -317,7 +411,6 @@ export default function SettingsPage() {
       ctx.globalAlpha = 1.0;
       ctx.fillText(format(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), "MM/dd/yyyy"), canvas.width - 16 * scale, y + 12 * scale);
 
-      // Bottom bar
       const bottomGradient = ctx.createLinearGradient(0, canvas.height - 8 * scale, canvas.width, canvas.height - 8 * scale);
       bottomGradient.addColorStop(0, "#facc15");
       bottomGradient.addColorStop(0.5, "#f59e0b");
@@ -325,22 +418,15 @@ export default function SettingsPage() {
       ctx.fillStyle = bottomGradient;
       ctx.fillRect(0, canvas.height - 8 * scale, canvas.width, 8 * scale);
 
-      // Generate PNG data URL from canvas
       const dataUrl = canvas.toDataURL("image/png", 1.0);
-
-      // Create PDF using jsPDF
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
-        format: [86, 54], // Standard ID card size (ISO/IEC 7810 ID-1)
+        format: [86, 54],
       });
-
-      // Convert canvas dimensions to mm (1 px = 0.264583 mm at 96 DPI)
       const pdfWidth = 86;
       const pdfHeight = 54;
       pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-      // Save the PDF
       pdf.save(`barangay-id-${barangayId || "unknown"}.pdf`);
 
       toast({
@@ -351,7 +437,7 @@ export default function SettingsPage() {
       console.error("Error generating PDF:", error);
       toast({
         title: "Download Failed",
-        description: "Unable to generate PDF. Ensure your profile image is accessible or try again.",
+        description: "Unable to generate PDF. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -359,7 +445,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Helper function to split text for address
   const splitText = (text: string, ctx: CanvasRenderingContext2D, maxWidth: number): string[] => {
     const words = text.split(" ");
     const lines: string[] = [];
@@ -375,113 +460,101 @@ export default function SettingsPage() {
       }
     }
     if (currentLine) lines.push(currentLine);
-    return lines.slice(0, 2); // Limit to 2 lines
+    return lines.slice(0, 2);
   };
 
-  const BarangayIdCard = () => (
-    <div
-      className="w-100"
-      style={{ aspectRatio: "1.6/1" }}
-    >
-      <div
-        ref={idCardRef}
-        className="w-full h-auto rounded-xl shadow-2xl overflow-hidden"
-        style={{
-          background: "linear-gradient(to bottom right, #065f46, #4b5563)",
-        }}
-      >
-        <div className="bg-white/10 backdrop-blur-sm p-3 text-center border-b border-white/20">
-          <div className="text-white">
-            <h2 className="text-sm font-bold tracking-wide">REPUBLIC OF THE PHILIPPINES</h2>
-            <h3 className="text-xs opacity-90">BARANGAY IDENTIFICATION CARD</h3>
-            <div className="text-xs opacity-80 mt-1">MAIMPIS, PAMPANGA</div>
-          </div>
+  const BarangayIdCard = () => {
+    if (!formData) {
+      return (
+        <div className="text-center text-muted-foreground">
+          User data is not available. Please try again later.
         </div>
-        <div className="p-4 text-white">
-          <div className="flex gap-4 mb-4">
-            <div className="flex-shrink-0">
-              <div className="w-20 h-24 bg-white rounded border-2 border-white/50 overflow-hidden">
-                <img
-                  src={formData?.profile.image || "/placeholder.svg"}
-                  alt="ID Photo"
-                  className="w-full h-full object-cover"
-                  crossOrigin="anonymous"
-                />
+      );
+    }
+
+    return (
+      <div className="w-100" style={{ aspectRatio: "1.6/1" }}>
+        <div
+          ref={idCardRef}
+          className="w-full h-auto rounded-xl shadow-2xl overflow-hidden"
+          style={{
+            background: "linear-gradient(to bottom right, #065f46, #4b5563)",
+          }}
+        >
+          <div className="bg-white/10 backdrop-blur-sm p-3 text-center border-b border-white/20">
+            <div className="text-white">
+              <h2 className="text-sm font-bold tracking-wide">REPUBLIC OF THE PHILIPPINES</h2>
+              <h3 className="text-xs opacity-90">BARANGAY IDENTIFICATION CARD</h3>
+              <div className="text-xs opacity-80 mt-1">MAIMPIS, PAMPANGA</div>
+            </div>
+          </div>
+          <div className="p-4 text-white">
+            <div className="flex gap-4 mb-4">
+              <div className="flex-shrink-0">
+                <div className="w-20 h-24 bg-white rounded border-2 border-white/50 overflow-hidden">
+                  <img
+                    src={imageFile ? URL.createObjectURL(imageFile) : formData.profile.image || "/placeholder.svg"}
+                    alt="ID Photo"
+                    className="w-full h-full object-cover"
+                    crossOrigin="anonymous"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 space-y-1 text-sm overflow-hidden">
+                <div>
+                  <div className="text-xs opacity-75">ID NO:</div>
+                  <div className="font-bold text-yellow-300">{barangayId || "N/A"}</div>
+                </div>
+                <div>
+                  <div className="text-xs opacity-75">NAME:</div>
+                  <div className="font-semibold text-sm leading-tight truncate">
+                    {formData.profile.name.toUpperCase() || "N/A"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs opacity-75">ADDRESS:</div>
+                  <div className="text-xs leading-tight line-clamp-2">{formData.profile.address || "N/A"}</div>
+                </div>
               </div>
             </div>
-            <div className="flex-1 space-y-1 text-sm overflow-hidden">
+            <div className="grid grid-cols-2 gap-2 text-xs border-t border-white/20 pt-3">
               <div>
-                <div className="text-xs opacity-75">ID NO:</div>
-                <div className="font-bold text-yellow-300">{barangayId}</div>
-              </div>
-              <div>
-                <div className="text-xs opacity-75">NAME:</div>
-                <div className="font-semibold text-sm leading-tight truncate">
-                  {formData?.profile.name.toUpperCase()}
+                <div className="opacity-75">BIRTHDATE:</div>
+                <div className="font-medium">
+                  {formData.profile.birthdate
+                    ? format(new Date(formData.profile.birthdate), "MM/dd/yyyy")
+                    : "N/A"}
                 </div>
               </div>
               <div>
-                <div className="text-xs opacity-75">ADDRESS:</div>
-                <div className="text-xs leading-tight line-clamp-2">{formData?.profile.address}</div>
+                <div className="opacity-75">CIVIL STATUS:</div>
+                <div className="font-medium capitalize">{formData.profile.civil_status || "N/A"}</div>
+              </div>
+              <div>
+                <div className="opacity-75">CONTACT:</div>
+                <div className="font-medium">{formData.profile.contact_number || "N/A"}</div>
+              </div>
+              <div>
+                <div className="opacity-75">ROLE:</div>
+                <div className="font-medium capitalize">{formData.profile.role || "N/A"}</div>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-xs">
+              <div>
+                <div className="opacity-75">ISSUED:</div>
+                <div>{format(new Date(), "MM/dd/yyyy")}</div>
+              </div>
+              <div className="text-right">
+                <div className="opacity-75">VALID UNTIL:</div>
+                <div>{format(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), "MM/dd/yyyy")}</div>
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs border-t border-white/20 pt-3">
-            <div>
-              <div className="opacity-75">BIRTHDATE:</div>
-              <div className="font-medium">
-                {formData?.profile.birthdate
-                  ? format(new Date(formData.profile.birthdate), "MM/dd/yyyy")
-                  : ""}
-              </div>
-            </div>
-            <div>
-              <div className="opacity-75">CIVIL STATUS:</div>
-              <div className="font-medium capitalize">{formData?.profile.civil_status}</div>
-            </div>
-            <div>
-              <div className="opacity-75">CONTACT:</div>
-              <div className="font-medium">{formData?.profile.contact_number}</div>
-            </div>
-            <div>
-              <div className="opacity-75">ROLE:</div>
-              <div className="font-medium capitalize">{formData?.profile.role}</div>
-            </div>
-          </div>
-          <div className="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-xs">
-            <div>
-              <div className="opacity-75">ISSUED:</div>
-              <div>{format(new Date(), "MM/dd/yyyy")}</div>
-            </div>
-            <div className="text-right">
-              <div className="opacity-75">VALID UNTIL:</div>
-              <div>{format(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), "MM/dd/yyyy")}</div>
-            </div>
-          </div>
-        </div>
-        <div className="h-2 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400"></div>
-      </div>
-    </div>
-  );
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <div>Loading user data...</div>
+          <div className="h-2 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400"></div>
         </div>
       </div>
     );
-  }
-
-  if (!formData) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div>No user data available.</div>
-      </div>
-    );
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -511,8 +584,11 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={formData.profile.image || "/placeholder.svg"} alt={formData.profile.name} />
-                    <AvatarFallback>{formData.profile.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+                    <AvatarImage
+                      src={imageFile ? URL.createObjectURL(imageFile) : formData?.profile.image || "/placeholder.svg"}
+                      alt={formData?.profile.name || "User"}
+                    />
+                    <AvatarFallback>{formData?.profile.name.split(" ").map((n) => n[0]).join("") || "U"}</AvatarFallback>
                   </Avatar>
                   <div>
                     <Label htmlFor="image-upload" className="cursor-pointer">
@@ -538,7 +614,7 @@ export default function SettingsPage() {
                     <Label htmlFor="username">Username</Label>
                     <Input
                       id="username"
-                      value={formData.username}
+                      value={formData?.username ?? ""}
                       onChange={(e) => handleInputChange("username", e.target.value)}
                     />
                   </div>
@@ -547,7 +623,7 @@ export default function SettingsPage() {
                     <Input
                       id="email"
                       type="email"
-                      value={formData.email}
+                      value={formData?.email ?? ""}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                     />
                   </div>
@@ -559,7 +635,7 @@ export default function SettingsPage() {
                       <Label htmlFor="name">Full Name</Label>
                       <Input
                         id="name"
-                        value={formData.profile.name}
+                        value={formData?.profile.name ?? ""}
                         onChange={(e) => handleInputChange("name", e.target.value, true)}
                       />
                     </div>
@@ -567,7 +643,7 @@ export default function SettingsPage() {
                       <Label htmlFor="contact">Contact Number</Label>
                       <Input
                         id="contact"
-                        value={formData.profile.contact_number}
+                        value={formData?.profile.contact_number ?? ""}
                         onChange={(e) => handleInputChange("contact_number", e.target.value, true)}
                       />
                     </div>
@@ -576,7 +652,7 @@ export default function SettingsPage() {
                     <Label htmlFor="address">Address</Label>
                     <Input
                       id="address"
-                      value={formData.profile.address}
+                      value={formData?.profile.address ?? ""}
                       onChange={(e) => handleInputChange("address", e.target.value, true)}
                     />
                   </div>
@@ -584,7 +660,7 @@ export default function SettingsPage() {
                     <div className="space-y-2 w-full">
                       <Label htmlFor="civil-status">Civil Status</Label>
                       <Select
-                        value={formData.profile.civil_status}
+                        value={formData?.profile.civil_status ?? "single"}
                         onValueChange={(value) => handleInputChange("civil_status", value, true)}
                       >
                         <SelectTrigger className="w-full">
@@ -628,14 +704,14 @@ export default function SettingsPage() {
                     <Label>Role</Label>
                     <div>
                       <Badge variant="secondary" className="capitalize">
-                        {formData.profile.role}
+                        {formData?.profile.role || "N/A"}
                       </Badge>
                       <p className="text-sm text-muted-foreground mt-1">Role cannot be modified</p>
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <Button onClick={handleSaveSettings} disabled={isUpdating}>
+                  <Button onClick={handleSaveSettings} disabled={isUpdating || !userId}>
                     <Save className="h-4 w-4 mr-2" />
                     {isUpdating ? "Saving..." : "Save Changes"}
                   </Button>
@@ -659,7 +735,7 @@ export default function SettingsPage() {
                         <p className="text-sm text-muted-foreground mb-4">
                           Make sure all your profile information is accurate before generating your barangay ID.
                         </p>
-                        <Button onClick={generateBarangayId} disabled={isGeneratingId} size="lg">
+                        <Button onClick={generateBarangayId} disabled={isGeneratingId || !userId} size="lg">
                           {isGeneratingId ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -674,7 +750,7 @@ export default function SettingsPage() {
                         </Button>
                       </div>
                     </div>
-                  ) : (
+                  ) : formData ? (
                     <div className="space-y-6">
                       <div className="text-center">
                         <h3 className="text-lg font-semibold mb-2">Your Barangay ID</h3>
@@ -728,6 +804,10 @@ export default function SettingsPage() {
                           <li>• Keep both digital and physical copies for your records</li>
                         </ul>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      User data is not available. Please try again later.
                     </div>
                   )}
                 </CardContent>

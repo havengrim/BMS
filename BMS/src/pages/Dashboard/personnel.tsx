@@ -465,9 +465,13 @@ export default function Personnel() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
-                      {personnel.filter((p) => !p.position?.includes("Admin")).length}
-                    </div>
+                      <div className="text-2xl font-bold">
+                          {personnel.filter(p => {
+                            const pos = p.position?.toLowerCase() || ""
+                            return !pos.includes("admin") && !pos.includes("staff")
+                          }).length}
+                        </div>
+
                     <p className="text-xs text-muted-foreground">Support staff</p>
                   </CardContent>
                 </Card>

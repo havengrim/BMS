@@ -276,7 +276,7 @@ export function Navbar() {
                         <Button
                           variant="ghost"
                           className="w-full justify-start"
-                          onClick={() => navigate("/profile")}
+                          onClick={() => navigate("/settings")}
                         >
                           <User className="mr-2 h-4 w-4" />
                           Settings

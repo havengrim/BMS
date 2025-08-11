@@ -37,6 +37,7 @@ export const useAuthStore = create<AuthState>()(
         storeApi.persist.clearStorage();
         localStorage.removeItem("auth-storage");
       },
+
       logout: () => {
         get().clearAuth();
       },
@@ -54,7 +55,8 @@ export const useAuthStore = create<AuthState>()(
           const accessToken = res.data?.access || Cookies.get("access_token");
 
           if (accessToken) {
-            Cookies.set("access_token", accessToken, { expires: 1 / 24 }); 
+            // Set cookie to expire in 1 hour
+            Cookies.set("access_token", accessToken, { expires: 1 / 24 });
             set({ token: accessToken });
             console.log("useAuthStore: New access token set:", accessToken);
           } else {
@@ -79,7 +81,30 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       partialize: (state: AuthState) => ({
         user: state.user,
+        token: state.token, // Persist token too
       }),
     }
   )
 );
+
+/* 
+Usage:  
+In your top-level React component (e.g., App.tsx), add this to auto refresh token every 50 minutes:
+
+import { useEffect } from "react";
+import { useAuthStore } from "@/stores/auth";
+
+function App() {
+  const refreshToken = useAuthStore((staFte) => state.refreshToken);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshToken();
+    }, 50 * 60 * 1000); // 50 minutes
+
+    return () => clearInterval(interval);
+  }, [refreshToken]);
+
+  // your app JSX
+}
+*/
