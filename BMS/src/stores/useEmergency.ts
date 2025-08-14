@@ -19,6 +19,7 @@ id: string;
   created_at:string;
   updated_at: string;
   phone_number: string;
+  alert_message:string;
 };
 
 export type CreateEmergencyInput = {

@@ -23,6 +23,7 @@ class EmergencyReport(models.Model):
     description = models.TextField()
     latitude = models.DecimalField(max_digits=10, decimal_places=6, default=0.0)
     longitude = models.DecimalField(max_digits=10, decimal_places=6, default=0.0)
+    alert_message = models.TextField(default="🚨 Emergency reported. Stay alert.")
 
     # Optional media upload, can be image/audio/video
     media_file = models.FileField(upload_to='emergency_media/', blank=True, null=True)
@@ -40,3 +41,12 @@ class EmergencyReport(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.incident_type} at {self.location_text} ({self.status})"
+
+
+class EmergencyAlert(models.Model):
+    type = models.CharField(max_length=100, unique=True)  # e.g., 'rape', 'thief', 'fire'
+    alert_message = models.TextField(default="🚨 Emergency reported. Stay alert.")
+  # e.g., '🚨 Theft incident reported nearby. Secure your belongings.'
+
+    def __str__(self):
+        return self.type

@@ -11,6 +11,7 @@ import AnnouncementsPage from "@/pages/AnnouncementsPage";
 import ContactPage from "@/pages/ContactPage";
 import OfflinePage from "@/pages/OfflinePage";
 import PrivacyPage from "@/pages/PrivacyPage";
+import NotificationPage from "./pages/NotificationPage";
 import TermsPage from "@/pages/TermsPage";
 import AccessibilityPage from "@/pages/AccessibilityPage";
 import LoginPage from "./pages/Authentication/login";
@@ -89,6 +90,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/resident-notification"
+            element={
+              <ProtectedRoute>
+                <NotificationPage />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/manage-blotter"
             element={

@@ -1,6 +1,7 @@
-"use client"
+"use client";
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useEmergencies } from "@/stores/useEmergency";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, FileText, Users, MessageSquare, User, LogOut, Notebook } from "lucide-react";
+import { Menu, FileText, Users, MessageSquare, User, LogOut, Notebook, Bell } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -46,11 +47,11 @@ const services = [
     icon: MessageSquare,
   },
   {
-  title: "Blotter Reports",
-  href: "/blotter",
-  description: "Log incidents and generate blotter reports",
-  icon: Notebook,
-}
+    title: "Blotter Reports",
+    href: "/blotter",
+    description: "Log incidents and generate blotter reports",
+    icon: Notebook,
+  },
 ];
 
 export function Navbar() {
@@ -58,6 +59,9 @@ export function Navbar() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const handleLogout = useLogout();
+
+  const { data: emergencies } = useEmergencies();
+  const hasInProgress = emergencies?.some((e) => e.status === "in_progress") ?? false;
 
   const isResidentOrUser =
     user && (user.profile?.role === "user" || user.profile?.role === "resident");
@@ -95,6 +99,7 @@ export function Navbar() {
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
+
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Services</NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -120,18 +125,22 @@ export function Navbar() {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
                     to="/announcements"
                     className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
-                      location.pathname === "/announcements" ? "text-primary" : "text-muted-foreground"
+                      location.pathname === "/announcements"
+                        ? "text-primary"
+                        : "text-muted-foreground"
                     }`}
                   >
                     Announcements
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
+
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
@@ -151,23 +160,34 @@ export function Navbar() {
             {isResidentOrUser ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Avatar className="cursor-pointer h-8 w-8 hidden md:flex">
-                    <AvatarImage
-                      src={
-                        user?.profile?.image
-                          ? `${import.meta.env.VITE_API_URL}${user.profile.image}`
-                          : undefined
-                      }
-                      alt={user?.username}
-                    />
-                    <AvatarFallback className="font-semibold">
-                      {user.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    {/* Desktop Avatar */}
+                    <Avatar className="cursor-pointer h-8 w-8 hidden md:flex">
+                      <AvatarImage
+                        src={
+                          user?.profile?.image
+                            ? `${import.meta.env.VITE_API_URL}${user.profile.image}`
+                            : undefined
+                        }
+                        alt={user?.username}
+                      />
+                      <AvatarFallback className="font-semibold">
+                        {user.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {hasInProgress && (
+                      <span className="absolute -top-[-1px] -right-[-1px] h-2 w-2 rounded-full bg-red-500 ring-1 ring-white animate-pulse hidden sm:block"></span>
+                    )}
+                  </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/resident-notification")}>
+                    <Bell className="mr-2 h-4 w-4" />
+                    Notification
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/settings")}>
                     <User className="mr-2 h-4 w-4" />
                     Settings
@@ -199,25 +219,36 @@ export function Navbar() {
                 className="w-[300px] sm:w-[400px]"
               >
                 <div className="flex flex-col h-full">
-                  {/* User Profile Section - Mobile */}
-                  {isResidentOrUser ? (
+                  {/* Mobile Avatar */}
+                  {isResidentOrUser && (
                     <div className="flex items-center gap-3 p-4 border-b">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={
-                        user?.profile?.image
-                          ? `${import.meta.env.VITE_API_URL}${user.profile.image}`
-                          : undefined
-                      } />
-                        <AvatarFallback className="font-semibold">
-                          {user.username.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
+                      <div className="relative">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage
+                            src={
+                              user?.profile?.image
+                                ? `${import.meta.env.VITE_API_URL}${user.profile.image}`
+                                : undefined
+                            }
+                          />
+                          <AvatarFallback className="font-semibold">
+                            {user.username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        {hasInProgress && (
+                          <span className="absolute -top-0.5 -right-[-1px] h-3 w-3 rounded-full bg-red-500 ring-1 ring-white animate-pulse"></span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col ml-3">
                         <span className="font-medium text-sm">{user.username}</span>
-                        <span className="text-xs text-muted-foreground capitalize">{user.profile.role}</span>
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {user.profile.role}
+                        </span>
                       </div>
                     </div>
-                  ) : null}
+                  )}
 
                   {/* Navigation Links */}
                   <div className="flex-1 p-4 space-y-4 overflow-y-auto">
@@ -269,34 +300,41 @@ export function Navbar() {
                     </Link>
                   </div>
 
-                  {/* User Actions - Mobile (at bottom) */}
-                  <div className="p-4 border-t space-y-2">
-                    {isResidentOrUser ? (
-                      <>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start"
-                          onClick={() => navigate("/settings")}
-                        >
-                          <User className="mr-2 h-4 w-4" />
-                          Settings
+                  {/* User Actions - Mobile */}
+                 <div className="p-4 border-t space-y-2">
+                      {isResidentOrUser ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => navigate("/resident-notification")}
+                          >
+                            <Bell className="mr-2 h-4 w-4" />
+                            Notifications
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => navigate("/settings")}
+                          >
+                            <User className="mr-2 h-4 w-4" />
+                            Settings
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
+                            onClick={handleLogout}
+                          >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Sign Out
+                          </Button>
+                        </>
+                      ) : (
+                        <Button asChild className="w-full">
+                          <Link to="/login">Sign In</Link>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
-                          onClick={handleLogout}
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          Sign Out
-                        </Button>
-                      </>
-                    ) : (
-                      // Show Sign In button at bottom if NOT logged in
-                      <Button asChild className="w-full">
-                        <Link to="/login">Sign In</Link>
-                      </Button>
-                    )}
-                  </div>
+                      )}
+                    </div>
                 </div>
               </SheetContent>
             </Sheet>
