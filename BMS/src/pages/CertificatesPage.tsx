@@ -32,6 +32,7 @@ import {
 } from "@/stores/useCertificates";
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
+import { validatePhilippinePhone } from "@/stores/validatePhone";
 
 const certificateTypes = [
   {
@@ -39,28 +40,28 @@ const certificateTypes = [
     name: "Barangay Clearance",
     description: "Required for employment, business permits, and other legal purposes",
     fee: "₱50.00",
-    processing: "2-3 business days",
+    processing: "5-10 mins",
   },
   {
     id: "certificate-of-residency",
     name: "Certificate of Residency",
     description: "Proof of residence in the barangay",
     fee: "₱30.00",
-    processing: "1-2 business days",
+    processing: "5-10 mins",
   },
   {
     id: "indigency-certificate",
     name: "Certificate of Indigency",
     description: "For financial assistance and scholarship applications",
     fee: "Free",
-    processing: "3-5 business days",
+    processing: "5-10 mins",
   },
   {
     id: "business-clearance",
     name: "Business Clearance",
     description: "Required for business permit applications",
     fee: "₱100.00",
-    processing: "3-5 business days",
+    processing: "5-10 mins",
   },
 ];
 
@@ -111,6 +112,7 @@ const getStatusText = (status: string) => {
 
 export default function CertificatesPage() {
   const [selectedCertificate, setSelectedCertificate] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -121,6 +123,18 @@ export default function CertificatesPage() {
     purpose: "",
     agree_terms: false,
   });
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+
+    setFormData({ ...formData, contact_number: value });
+
+    if (value.length > 0 && !validatePhilippinePhone(value)) {
+      setPhoneError("Invalid Phone Number");
+    } else {
+      setPhoneError("");
+    }
+  };
 
   const { toast } = useToast();
   const { user, loading } = useAuthStore();
@@ -282,7 +296,6 @@ useEffect(() => {
                         </CardHeader>
                         <CardContent className="pt-0">
                           <div className="flex justify-between text-sm">
-                            <span className="font-medium text-primary">{cert.fee}</span>
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Clock className="h-3 w-3" />
                               {cert.processing}
@@ -352,15 +365,19 @@ useEffect(() => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor="contact_number">Contact Number *</Label>
-                            <Input
-                              id="contact_number"
-                              type="tel"
-                              value={formData.contact_number}
-                              onChange={(e) =>
-                                setFormData({ ...formData, contact_number: e.target.value })
-                              }
-                              required
-                            />
+                           <div className="flex flex-col space-y-1">
+                              <Input
+                                id="contact_number"
+                                type="tel"
+                                inputMode="numeric"
+                                maxLength={13} // to handle +639xxxxxxxxx
+                                value={formData.contact_number}
+                                onChange={handlePhoneChange}
+                                placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                                required
+                              />
+                              {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}
+                            </div>
                           </div>
                           <div>
                             <Label htmlFor="email_address">Email Address *</Label>
@@ -472,18 +489,6 @@ useEffect(() => {
                                 certificateTypes.find(
                                   (cert) => cert.name === request.certificate_type
                                 )?.processing || "Unknown"
-                              }
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium text-muted-foreground">
-                              Fee
-                            </Label>
-                            <p className="font-medium">
-                              {
-                                certificateTypes.find(
-                                  (cert) => cert.name === request.certificate_type
-                                )?.fee || "Unknown"
                               }
                             </p>
                           </div>

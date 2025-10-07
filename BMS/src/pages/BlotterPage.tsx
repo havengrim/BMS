@@ -39,6 +39,7 @@ import {
 } from "@/stores/useBlotter";
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
+import { validatePhilippinePhone } from "@/stores/validatePhone";
 
 const incidentTypes = [
   {
@@ -172,6 +173,18 @@ export default function BlotterPage() {
 
   const isResident = user && user.profile?.role && ["resident"].includes(user.profile.role);
 
+    const [phoneError, setPhoneError] = useState("");
+     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+      
+          setFormData({ ...formData, contact_number: value });
+      
+          if (value.length > 0 && !validatePhilippinePhone(value)) {
+            setPhoneError("Invalid Phone Number");
+          } else {
+            setPhoneError("");
+          }
+        };
   // Clear blotters cache when user changes (logout/login)
   useEffect(() => {
     queryClient.removeQueries({ queryKey: ["blotters"] });
@@ -367,15 +380,19 @@ export default function BlotterPage() {
                           </div>
                           <div>
                             <Label htmlFor="contact_number">Contact Number *</Label>
-                            <Input
-                              id="contact_number"
-                              type="tel"
-                              value={formData.contact_number}
-                              onChange={(e) =>
-                                setFormData({ ...formData, contact_number: e.target.value })
-                              }
-                              required
-                            />
+                            <div className="flex flex-col space-y-1">
+                                <Input
+                                  id="contact_number"
+                                  type="tel"
+                                  inputMode="numeric"
+                                  maxLength={13} // to handle +639xxxxxxxxx
+                                  value={formData.contact_number}
+                                  onChange={handlePhoneChange}
+                                  placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                                  required
+                                />
+                                {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}
+                              </div>
                           </div>
                         </div>
 

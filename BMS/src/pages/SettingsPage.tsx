@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Download, Save, Settings, Upload, Camera, IdCard } from "lucide-react";
+import { CalendarIcon, Download, Save, Settings, Upload, Camera, IdCard, AlertCircleIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/navbar";
@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
-
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 interface UserProfile {
   id: number;
   username: string;
@@ -409,7 +409,7 @@ export default function SettingsPage() {
       ctx.textAlign = "right";
       ctx.fillText("VALID UNTIL:", canvas.width - 16 * scale, y);
       ctx.globalAlpha = 1.0;
-      ctx.fillText(format(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), "MM/dd/yyyy"), canvas.width - 16 * scale, y + 12 * scale);
+      ctx.fillText(format(new Date(Date.now() + 365 * 5 * 24 * 60 * 60 * 1000), "MM/dd/yyyy"), canvas.width - 16 * scale, y + 12 * scale);
 
       const bottomGradient = ctx.createLinearGradient(0, canvas.height - 8 * scale, canvas.width, canvas.height - 8 * scale);
       bottomGradient.addColorStop(0, "#facc15");
@@ -546,7 +546,7 @@ export default function SettingsPage() {
               </div>
               <div className="text-right">
                 <div className="opacity-75">VALID UNTIL:</div>
-                <div>{format(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), "MM/dd/yyyy")}</div>
+                <div>{format(new Date(Date.now() + 365 * 5 * 24 * 60 * 60 * 1000), "MM/dd/yyyy")}</div>
               </div>
             </div>
           </div>
@@ -721,6 +721,13 @@ export default function SettingsPage() {
           </TabsContent>
           <TabsContent value="barangay-id">
             <div className="space-y-6 h-full">
+              <Alert variant="destructive">
+             <AlertCircleIcon className="h-22 w-10" />
+                <AlertTitle>Heads up!</AlertTitle>
+                <AlertDescription className="flex gap-2">
+                   Barangay ID has a processing fee of <span className="font-bold">₱50.00</span>
+                </AlertDescription>
+              </Alert>
               <Card>
                 <CardHeader>
                   <CardTitle>Barangay ID Issuance</CardTitle>

@@ -17,6 +17,7 @@ import { Footer } from "@/components/footer";
 import { useAuthStore } from "@/stores/authStore";
 import { useBusinessPermits, useCreateBusinessPermit } from "@/stores/useBusinessPermits";
 import { type BusinessPermit } from "@/types/business-permit";
+import { validatePhilippinePhone } from "@/stores/validatePhone";
 
 const businessTypes = [
   "Retail Store",
@@ -85,7 +86,19 @@ export default function BusinessPermitsPage() {
     is_renewal: false,
     agree_to_terms: false,
   });
+  const [phoneError, setPhoneError] = useState("");
 
+   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+  
+      setFormData({ ...formData, contact_number: value });
+  
+      if (value.length > 0 && !validatePhilippinePhone(value)) {
+        setPhoneError("Invalid Phone Number");
+      } else {
+        setPhoneError("");
+      }
+    };
   const { toast } = useToast();
   const { user, loading } = useAuthStore();
   const { data: permits, isLoading, error } = useBusinessPermits();
@@ -158,9 +171,8 @@ export default function BusinessPermitsPage() {
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Business Permit Services</h1>
-          <p>Your role: {user?.profile?.role || "No role detected"}</p>
-          <p className="text-muted-foreground">Apply for new business permits and track your applications</p>
+          <h1 className="text-3xl font-bold mb-2">Ambulant Business Permit Services</h1>
+          <p className="text-muted-foreground">Request and manage your ambulant business permits easily online.</p>
         </div>
 
         {!isResident && (
@@ -201,10 +213,9 @@ export default function BusinessPermitsPage() {
                     <CardContent>
                       <ul className="space-y-2 text-sm">
                         <li>• Valid ID of business owner</li>
-                        <li>• Barangay clearance</li>
-                        <li>• Location sketch/map</li>
-                        <li>• Business registration (if applicable)</li>
-                        <li>• Fire safety inspection (for certain businesses)</li>
+                        <li>• Phone Number</li>
+                        <li>• Voters ID/Cert( if the first 2 are not available)</li>
+                        <li>• Dry Seal is a must!</li>
                       </ul>
                     </CardContent>
                   </Card>
@@ -301,18 +312,23 @@ export default function BusinessPermitsPage() {
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="contact_number">Contact Number *</Label>
-                            <Input
-                              id="contact_number"
-                              type="tel"
-                              value={formData.contact_number}
-                              onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
-                              required
-                            />
-                          </div>
+                        <div>
+                          <Label htmlFor="contact_number">Contact Number *</Label>
+                          <div className="flex flex-col space-y-1 w-full">
+                              <Input
+                                id="contact_number"
+                                type="tel"
+                                inputMode="numeric"
+                                maxLength={13} // to handle +639xxxxxxxxx
+                                value={formData.contact_number}
+                                onChange={handlePhoneChange}
+                                placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                                required
+                              />
+                              {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}
+                            </div>
                         </div>
+                     
 
                         <div>
                           <Label htmlFor="business_description">Business Description *</Label>

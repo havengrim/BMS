@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState  } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,27 +51,6 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
     latitude: 0,
     longitude: 0,
   });
-  const [locationError, setLocationError] = useState<string | null>(null);
-
-  // Attempt to get user's geolocation on modal open
-  useEffect(() => {
-    if (open && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData((prev) => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          }));
-          setLocationError(null);
-        },
-        (error) => {
-          setLocationError("Unable to retrieve location. Please enter manually.");
-          console.error("Geolocation error:", error);
-        }
-      );
-    }
-  }, [open]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -196,51 +175,7 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location_text">Location *</Label>
-            <Input
-              id="location_text"
-              value={formData.location_text}
-              onChange={(e) => handleInputChange("location_text", e.target.value)}
-              placeholder="e.g., 123 Main St, Near City Park, Barangay Hall"
-              maxLength={255}
-              required
-            />
-            {locationError && (
-              <p className="text-sm text-red-600">{locationError}</p>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="latitude">Latitude *</Label>
-              <Input
-                id="latitude"
-                type="number"
-                step="any"
-                value={formData.latitude || ""}
-                onChange={(e) =>
-                  handleInputChange("latitude", parseFloat(e.target.value) || 0)
-                }
-                placeholder="e.g., 14.5995"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="longitude">Longitude *</Label>
-              <Input
-                id="longitude"
-                type="number"
-                step="any"
-                value={formData.longitude || ""}
-                onChange={(e) =>
-                  handleInputChange("longitude", parseFloat(e.target.value) || 0)
-                }
-                placeholder="e.g., 120.9842"
-                required
-              />
-            </div>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Description *</Label>
@@ -254,52 +189,53 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="media_file">Attach Media (Optional)</Label>
             <div className="space-y-2">
-              {!formData.media_file ? (
-                <div className="border-2 border-dashed border-gray-300 flex flex-col justify-center items-center rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <Label htmlFor="media_file" className="cursor-pointer">
-                    <span className="text-sm text-gray-600">
-                      Click to upload image, audio, or video
-                    </span>
-                    <Input
-                      id="media_file"
-                      type="file"
-                      accept="image/*,audio/*,video/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </Label>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Supported formats: Images, Audio, Video (Max 10MB)
-                  </p>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-                  <div className="flex items-center gap-2">
-                    <Upload className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-700 truncate">
-                      {formData.media_file.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      ({(formData.media_file.size / 1024 / 1024).toFixed(2)} MB)
-                    </span>
+              <Label htmlFor="media_file">Attach Media (Required)</Label>
+              <div className="space-y-2">
+                {!formData.media_file ? (
+                  <div className="border-2 border-dashed border-gray-300 flex flex-col justify-center items-center rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <Label htmlFor="media_file" className="cursor-pointer">
+                      <span className="text-sm text-gray-600">
+                        Click to upload image, audio, or video
+                      </span>
+                      <Input
+                        id="media_file"
+                        type="file"
+                        accept="image/*,audio/*,video/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        required
+                      />
+                    </Label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Supported formats: Images, Audio, Video (Max 10MB)
+                    </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeFile}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center gap-2">
+                      <Upload className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-700 truncate">
+                        {formData.media_file.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({(formData.media_file.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={removeFile}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button

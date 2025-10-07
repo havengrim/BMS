@@ -32,6 +32,7 @@ import {
 import { Footer } from "@/components/footer";
 import { useComplaintByID , useCreateComplaint } from "@/stores/useComplaints";
 import { useAuthStore } from "@/stores/authStore";
+import { validatePhilippinePhone } from "@/stores/validatePhone";
 
 
 // Complaint type definition
@@ -367,6 +368,18 @@ export default function ComplaintsPage() {
   const { data: complaints, isLoading, error } = useComplaintByID();
   const createComplaint = useCreateComplaint();
 
+  const [phoneError, setPhoneError] = useState("");
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+  
+      setFormData({ ...formData, contact_number: value });
+  
+      if (value.length > 0 && !validatePhilippinePhone(value)) {
+        setPhoneError("Invalid Phone Number");
+      } else {
+        setPhoneError("");
+      }
+    };
 
   const [formData, setFormData] = useState({
     fullname: "",
@@ -661,13 +674,19 @@ export default function ComplaintsPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <Label htmlFor="contact_number">Contact Number *</Label>
-                              <Input
-                                id="contact_number"
-                                type="tel"
-                                value={formData.contact_number}
-                                onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
-                                required
-                              />
+                              <div className="flex flex-col space-y-1">
+                                <Input
+                                  id="contact_number"
+                                  type="tel"
+                                  inputMode="numeric"
+                                  maxLength={13} // to handle +639xxxxxxxxx
+                                  value={formData.contact_number}
+                                  onChange={handlePhoneChange}
+                                  placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                                  required
+                                />
+                                {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}
+                              </div>
                             </div>
                             <div>
                               <Label htmlFor="email_address">Email Address</Label>

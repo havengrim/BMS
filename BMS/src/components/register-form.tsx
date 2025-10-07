@@ -21,6 +21,7 @@ import images from "@/assets/images";
 
 import { useRegister } from "@/stores/useAccount";
 import  Spinner  from "@/components/ui/spinner";  // <-- import Spinner
+import { validatePhilippinePhone } from "@/stores/validatePhone";
 
 type RegisterFormData = {
   name:string;
@@ -54,6 +55,18 @@ export function RegisterForm({
   const { mutate: register, status } = registerMutation;
   const isLoading = status === "pending";
 
+    const [phoneError, setPhoneError] = useState("");
+       const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+        
+            setForm({ ...form, contact_number: value });
+        
+            if (value.length > 0 && !validatePhilippinePhone(value)) {
+              setPhoneError("Invalid Phone Number");
+            } else {
+              setPhoneError("");
+            }
+          };
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -150,15 +163,19 @@ export function RegisterForm({
               {/* Contact Number */}
               <div className="grid gap-2">
                 <Label htmlFor="contact_number">Contact Number</Label>
-                <Input
-                  id="contact_number"
-                  name="contact_number"
-                  type="tel"
-                  placeholder="09XXXXXXXXX"
-                  value={form.contact_number}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="flex flex-col space-y-1">
+                  <Input
+                    id="contact_number"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={13} // to handle +639xxxxxxxxx
+                    value={form.contact_number}
+                    onChange={handlePhoneChange}
+                    placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                    required
+                  />
+                  {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}
+                </div>
               </div>
 
               {/* Address */}

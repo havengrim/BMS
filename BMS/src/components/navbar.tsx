@@ -60,11 +60,14 @@ export function Navbar() {
   const navigate = useNavigate();
   const handleLogout = useLogout();
 
-  const { data: emergencies } = useEmergencies();
-  const hasInProgress = emergencies?.some((e) => e.status === "in_progress") ?? false;
+const { data: emergencies } = useEmergencies();
+const emergencyList = Array.isArray(emergencies) ? emergencies : [];
+const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
 
   const isResidentOrUser =
     user && (user.profile?.role === "user" || user.profile?.role === "resident");
+
+  const isResident = user?.profile?.role === "resident";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -100,6 +103,7 @@ export function Navbar() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
+            {isResident && (
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Services</NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -125,7 +129,7 @@ export function Navbar() {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
-
+            )}
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link

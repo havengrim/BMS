@@ -40,6 +40,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         get().clearAuth();
+        
       },
 
       refreshToken: async () => {
