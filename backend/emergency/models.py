@@ -21,12 +21,12 @@ class EmergencyReport(models.Model):
     name = models.CharField(max_length=100)
     incident_type = models.CharField(max_length=20, choices=INCIDENT_TYPES, default='other')
     description = models.TextField()
-    latitude = models.DecimalField(max_digits=10, decimal_places=6, default=0.0)
-    longitude = models.DecimalField(max_digits=10, decimal_places=6, default=0.0)
+    latitude = models.DecimalField(max_digits=10, decimal_places=6, default=0.0, null=True)
+    longitude = models.DecimalField(max_digits=10, decimal_places=6, default=0.0, null=True)
     alert_message = models.TextField(default="🚨 Emergency reported. Stay alert.")
 
     # Optional media upload, can be image/audio/video
-    media_file = models.FileField(upload_to='emergency_media/', blank=True, null=True)
+    media_file = models.FileField(upload_to='emergency_media/')
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     

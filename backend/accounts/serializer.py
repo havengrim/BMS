@@ -131,21 +131,27 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         email = attrs.get("email")
         password = attrs.get("password")
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        # 🔹 Use filter instead of get to avoid MultipleObjectsReturned
+        users = User.objects.filter(email=email)
+
+        if not users.exists():
             raise serializers.ValidationError({"email": "No user found with this email."})
 
-        # Authenticate using username (required by SimpleJWT)
+        if users.count() > 1:
+            raise serializers.ValidationError(
+                {"email": "Multiple accounts use this email. Please use username instead."}
+            )
+
+        user = users.first()
+
+        # Authenticate using username
         user = authenticate(username=user.username, password=password)
 
         if not user:
             raise serializers.ValidationError({"password": "Incorrect password."})
 
-        # Generate JWT token pair
         refresh = TokenObtainPairSerializer.get_token(user)
-
-        profile = getattr(user, 'profile', None)
+        profile = getattr(user, "profile", None)
 
         return {
             "refresh": str(refresh),
@@ -161,9 +167,8 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
                     "civil_status": profile.civil_status if profile else None,
                     "birthdate": profile.birthdate if profile else None,
                     "role": profile.role if profile else None,
-                    "image": (
-                        profile.image.url if profile and profile.image else None
-                    ),
-                } if profile else None
-            }
+                    "image": profile.image.url if profile and profile.image else None,
+                } if profile else None,
+            },
         }
+
