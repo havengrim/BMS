@@ -51,6 +51,7 @@ import { useCertificates, useEditCertificate, useDeleteCertificate, type Certifi
 import Docxtemplater from 'docxtemplater'
 import PizZip from 'pizzip'
 import { saveAs } from 'file-saver'
+import { formatBirthdate } from "@/stores/helper"
 
 const certificateTypes = [
   "All",
@@ -187,6 +188,9 @@ const generateCertificate = async (certificate: Certificate) => {
       case "Certificate of Residency":
         templateFile = "/templates/residency.docx";
         break;
+      case "Barangay Clearance":
+        templateFile = "/templates/clearance.docx";
+        break;
       // Add other certificate types if needed
       default:
         throw new Error("Unsupported certificate type");
@@ -208,7 +212,9 @@ const generateCertificate = async (certificate: Certificate) => {
     const address = certificate.complete_address || "";
     const purpose = certificate.purpose || "";
     const userAge = certificate.user_age ? certificate.user_age.toString() : "";
-
+    const birthdate = certificate.user_birthdate
+      ? formatBirthdate(certificate.user_birthdate)
+      : "N/A";
     // Format today's date
     const { day, month, year } = formatDate(new Date());
 
@@ -218,6 +224,7 @@ const generateCertificate = async (certificate: Certificate) => {
       address: address.toUpperCase(),
       purpose: purpose.toUpperCase(),
       age: userAge,
+      birthday:birthdate,
       date: day,
       month,
       year,
@@ -499,9 +506,11 @@ const generateCertificate = async (certificate: Certificate) => {
                                         <p>Edit Certificate</p>
                                       </TooltipContent>
                                     </Tooltip>
-                                   {(certificate.certificate_type === "Certificate of Indigency" ||
-                                      certificate.certificate_type === "Certificate of Residency") &&
-                                      certificate.status === "completed" && (
+                                    {(
+                                        certificate.certificate_type === "Certificate of Indigency" ||
+                                        certificate.certificate_type === "Certificate of Residency" ||
+                                        certificate.certificate_type === "Barangay Clearance"
+                                      ) && certificate.status === "completed" && (
                                         <Tooltip>
                                           <TooltipTrigger asChild>
                                             <Button
@@ -517,7 +526,7 @@ const generateCertificate = async (certificate: Certificate) => {
                                             <p>Download Certificate</p>
                                           </TooltipContent>
                                         </Tooltip>
-                                    )}
+                                      )}
                                     <AlertDialog>
                                       <Tooltip>
                                         <TooltipTrigger asChild>

@@ -8,6 +8,7 @@ export type Status = "pending" | "approved" | "rejected" | "completed";
 // Types
 export type Certificate = {
   user_age: number;
+  user_birthdate:string;
   id: number
   certificate_type: string
   request_number: string
