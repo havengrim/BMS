@@ -33,7 +33,8 @@ import { Footer } from "@/components/footer";
 import { useComplaintByID , useCreateComplaint } from "@/stores/useComplaints";
 import { useAuthStore } from "@/stores/authStore";
 import { validatePhilippinePhone } from "@/stores/validatePhone";
-
+import addresses from "@/data/addresses.json"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Complaint type definition
 export type Complaint = {
@@ -243,6 +244,12 @@ const LocationPicker = ({
       });
     }
   }, [selectedLocation, mapLoaded]);
+
+  const [, setAddressList] = useState<string[]>([]);
+
+  useEffect(() => {
+    setAddressList(addresses);
+  }, []);
 
   return (
     <div>
@@ -570,6 +577,8 @@ export default function ComplaintsPage() {
     }
   };
 
+
+
   // Handle loading state
   if (loading) {
     return (
@@ -700,12 +709,21 @@ export default function ComplaintsPage() {
                           </div>
                           <div>
                             <Label htmlFor="address">Address *</Label>
-                            <Textarea
-                              id="address"
+                            <Select
                               value={formData.address}
-                              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                              required
-                            />
+                              onValueChange={(value) => setFormData({ ...formData, address: value })}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select address" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {addresses.map((addr:any, i:any) => (
+                                  <SelectItem key={i} value={addr}>
+                                    {addr}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
 

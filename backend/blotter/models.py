@@ -39,7 +39,7 @@ class BlotterReport(models.Model):
     incident_date = models.DateField()
     incident_time = models.TimeField()
     location = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(blank=True, null=True)
 
     witnesses = models.TextField(blank=True, null=True)
     agree_terms = models.BooleanField(default=False)

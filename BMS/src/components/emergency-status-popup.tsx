@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, AlertTriangle, Clock, CheckCircle, Volume2, VolumeX, Eye } from 'lucide-react';
+import { X, AlertTriangle, Clock, CheckCircle, Volume2, VolumeX, Eye, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -26,6 +26,80 @@ import { useQueryClient } from "@tanstack/react-query";
 interface EmergencyStatusPopupProps {
 // No props needed
 }
+
+interface MapViewerProps {
+  lat: number;
+  lng: number;
+}
+
+const MapViewer = ({ lat, lng }: MapViewerProps) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && mapRef.current && !mapInstanceRef.current) {
+      const loadLeafletCSS = () => {
+        if (document.querySelector('link[href*="leaflet"]')) {
+          return Promise.resolve();
+        }
+        return new Promise<void>((resolve) => {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+          link.onload = () => resolve();
+          document.head.appendChild(link);
+        });
+      };
+
+      loadLeafletCSS().then(() => {
+        import("leaflet").then((L) => {
+          if (!mapRef.current || mapInstanceRef.current) return;
+
+          mapInstanceRef.current = L.map(mapRef.current, {
+            zoomControl: false,
+            attributionControl: false,
+          }).setView([lat, lng], 15);
+
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors",
+          }).addTo(mapInstanceRef.current);
+
+          markerRef.current = L.marker([lat, lng]).addTo(mapInstanceRef.current);
+
+          setMapLoaded(true);
+        });
+      });
+    }
+
+    return () => {
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.off();
+          mapInstanceRef.current.remove();
+        } catch (error) {
+          console.warn("Error during map cleanup:", error);
+        }
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [lat, lng]);
+
+  return (
+    <div className="relative w-full h-full rounded-lg border bg-gray-100 overflow-hidden">
+      <div ref={mapRef} className="w-full h-full" />
+      {!mapLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Loading map...</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export function EmergencyStatusPopup({}: EmergencyStatusPopupProps) {
 const [isVisible, setIsVisible] = useState(true);
@@ -109,6 +183,59 @@ useEffect(() => {
 if (!isVisible || (pendingReports.length === 0 && inProgressReports.length === 0)) {
   return null;
 }
+
+const renderDetailsContent = (report: EmergencyReport) => (
+  <div className="space-y-2 text-muted-foreground">
+    <p>
+      <strong>{'Incident Type:'}</strong>{" "}
+      {report.incident_type.toUpperCase()}
+    </p>
+    <p>
+      <strong>{'Reported By:'}</strong> {report.name}
+    </p>
+    <p>
+      <strong>{'Submitted At:'}</strong>{" "}
+      {new Date(report.submitted_at).toLocaleString()}
+    </p>
+    <p>
+      <strong>{'Status:'}</strong> {report.status}
+    </p>
+    {report.description && (
+      <p>
+        <strong>{'Description:'}</strong> {report.description}
+      </p>
+    )}
+    {report.latitude && report.longitude && (
+      <>
+        <p>
+          <strong>{'Coordinates:'}</strong> {report.latitude},{" "}
+          {report.longitude}
+        </p>
+        <div className="mt-4">
+          <p className="font-medium flex items-center gap-2 mb-2">
+            <MapPin className="h-4 w-4" />
+            Location Map
+          </p>
+          <div className="h-48 rounded-lg border overflow-hidden">
+            <MapViewer lat={report.latitude} lng={report.longitude} />
+          </div>
+        </div>
+      </>
+    )}
+    {report.phone_number && (
+      <p>
+        <strong>{'Contact Number:'}</strong> {report.phone_number}
+      </p>
+    )}
+    {report.media_file && (
+      <img
+        src={report.media_file || "/placeholder.svg"}
+        alt="Emergency related"
+        className="mt-2 max-h-60 w-full object-contain rounded-md border border-border"
+      />
+    )}
+  </div>
+);
 
 return (
   <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm">
@@ -199,50 +326,7 @@ return (
                             <DialogHeader>
                               <DialogTitle>Emergency Report Details</DialogTitle>
                             </DialogHeader>
-                            {selectedReport && (
-                              <div className="space-y-2 text-muted-foreground">
-                                <p>
-                                  <strong>{'Incident Type:'}</strong>{" "}
-                                  {selectedReport.incident_type.toUpperCase()}
-                                </p>
-                                <p>
-                                  <strong>{'Location:'}</strong> {selectedReport.location_text}
-                                </p>
-                                <p>
-                                  <strong>{'Reported By:'}</strong> {selectedReport.name}
-                                </p>
-                                <p>
-                                  <strong>{'Submitted At:'}</strong>{" "}
-                                  {new Date(selectedReport.submitted_at).toLocaleString()}
-                                </p>
-                                <p>
-                                  <strong>{'Status:'}</strong> {selectedReport.status}
-                                </p>
-                                {selectedReport.description && (
-                                  <p>
-                                    <strong>{'Description:'}</strong> {selectedReport.description}
-                                  </p>
-                                )}
-                                {selectedReport.latitude && selectedReport.longitude && (
-                                  <p>
-                                    <strong>{'Coordinates:'}</strong> {selectedReport.latitude},{" "}
-                                    {selectedReport.longitude}
-                                  </p>
-                                )}
-                                {selectedReport.phone_number && (
-                                  <p>
-                                    <strong>{'Contact Number:'}</strong> {selectedReport.phone_number}
-                                  </p>
-                                )}
-                                {selectedReport.media_file && (
-                                  <img
-                                    src={selectedReport.media_file || "/placeholder.svg"}
-                                    alt="Emergency related"
-                                    className="mt-2 max-h-60 w-full object-contain rounded-md border border-border"
-                                  />
-                                )}
-                              </div>
-                            )}
+                            {renderDetailsContent(selectedReport || report)}
                           </DialogContent>
                         </Dialog>
                         <Button
@@ -310,50 +394,7 @@ return (
                             <DialogHeader>
                               <DialogTitle>Emergency Report Details</DialogTitle>
                             </DialogHeader>
-                            {selectedReport && (
-                              <div className="space-y-2 text-muted-foreground">
-                                <p>
-                                  <strong>{'Incident Type:'}</strong>{" "}
-                                  {selectedReport.incident_type.toUpperCase()}
-                                </p>
-                                <p>
-                                  <strong>{'Location:'}</strong> {selectedReport.location_text}
-                                </p>
-                                <p>
-                                  <strong>{'Reported By:'}</strong> {selectedReport.name}
-                                </p>
-                                <p>
-                                  <strong>{'Submitted At:'}</strong>{" "}
-                                  {new Date(selectedReport.submitted_at).toLocaleString()}
-                                </p>
-                                <p>
-                                  <strong>{'Status:'}</strong> {selectedReport.status}
-                                </p>
-                                {selectedReport.description && (
-                                  <p>
-                                    <strong>{'Description:'}</strong> {selectedReport.description}
-                                  </p>
-                                )}
-                                {selectedReport.latitude && selectedReport.longitude && (
-                                  <p>
-                                    <strong>{'Coordinates:'}</strong> {selectedReport.latitude},{" "}
-                                    {selectedReport.longitude}
-                                  </p>
-                                )}
-                                {selectedReport.phone_number && (
-                                  <p>
-                                    <strong>{'Contact Number:'}</strong> {selectedReport.phone_number}
-                                  </p>
-                                )}
-                                {selectedReport.media_file && (
-                                  <img
-                                    src={selectedReport.media_file || "/placeholder.svg"}
-                                    alt="Emergency related"
-                                    className="mt-2 max-h-60 w-full object-contain rounded-md border border-border"
-                                  />
-                                )}
-                              </div>
-                            )}
+                            {renderDetailsContent(selectedReport || report)}
                           </DialogContent>
                         </Dialog>
                         <Button
@@ -393,5 +434,3 @@ return (
   </div>
 );
 }
-
-

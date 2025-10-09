@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState} from "react";
+import React, { useState, useEffect} from "react";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,10 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Building, FileText, Clock, CheckCircle, AlertTriangle, Package } from "lucide-react";
 import { Footer } from "@/components/footer";
 import { useAuthStore } from "@/stores/authStore";
-import { useBusinessPermits, useCreateBusinessPermit } from "@/stores/useBusinessPermits";
+import { useBusinessPermits, useCreateBusinessPermit, useEditBusinessPermit } from "@/stores/useBusinessPermits";
 import { type BusinessPermit } from "@/types/business-permit";
 import { validatePhilippinePhone } from "@/stores/validatePhone";
-
+import addresses from "@/data/addresses.json"
 const businessTypes = [
   "Retail Store",
   "Restaurant/Food Service",
@@ -62,13 +62,13 @@ const getStatusColor = (status: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case "pending":
-      return "Pending Review";
+      return "Received";
     case "approved":
-      return "Approved";
+      return "Ready for pickup";
     case "rejected":
       return "Rejected";
     case "completed":
-      return "Ready for Pickup";
+      return "Claimed";
     default:
       return "Unknown";
   }
@@ -81,12 +81,21 @@ export default function BusinessPermitsPage() {
     owner_name: "",
     business_address: "",
     contact_number: "",
+    houseNum: 0,
     owner_address: "",
     business_description: "",
     is_renewal: false,
     agree_to_terms: false,
+    status: "pending" as const
   });
   const [phoneError, setPhoneError] = useState("");
+  const [selectedPermitId, setSelectedPermitId] = useState("");
+
+  const [, setAddressList] = useState<string[]>([]);
+  
+    useEffect(() => {
+      setAddressList(addresses);
+    }, []);
 
    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
@@ -99,12 +108,56 @@ export default function BusinessPermitsPage() {
         setPhoneError("");
       }
     };
+
   const { toast } = useToast();
   const { user, loading } = useAuthStore();
   const { data: permits, isLoading, error } = useBusinessPermits();
   const createBusinessPermit = useCreateBusinessPermit();
+  const editBusinessPermit = useEditBusinessPermit();
 
   const isResident = user && user.profile?.role && ["resident"].includes(user.profile.role);
+
+  const eligiblePermits = permits ? permits.filter((p: BusinessPermit) => p.status === "completed") : [];
+
+  const handleSelectPermit = (id: string) => {
+    setSelectedPermitId(id);
+    const permit = permits?.find((p: BusinessPermit) => String(p.id) === id);
+    if (permit) {
+      setFormData({
+        ...formData,
+        business_name: permit.business_name,
+        business_type: permit.business_type,
+        owner_name: permit.owner_name,
+        business_address: permit.business_address,
+        contact_number: permit.contact_number,
+        owner_address: permit.owner_address,
+        houseNum: permit.houseNum || 0,
+        business_description: permit.business_description,
+        is_renewal: true,
+      });
+    }
+  };
+
+  const handleRenewalChange = (checked: boolean) => {
+    setFormData({ ...formData, is_renewal: checked as boolean });
+    if (!checked) {
+      setSelectedPermitId("");
+      // Optionally reset form fields for new application
+      setFormData({
+        business_name: "",
+        business_type: "",
+        owner_name: "",
+        business_address: "",
+        contact_number: "",
+        houseNum: 0,
+        owner_address: "",
+        business_description: "",
+        is_renewal: false,
+        agree_to_terms: false,
+        status: "pending" as const
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,19 +178,47 @@ export default function BusinessPermitsPage() {
       return;
     }
 
-    const permitData = {
+    const basePermitData = {
       business_name: formData.business_name,
       business_type: formData.business_type,
       owner_name: formData.owner_name,
       business_address: formData.business_address,
       contact_number: formData.contact_number,
       owner_address: formData.owner_address,
+      houseNum: formData?.houseNum ?? 0,
       business_description: formData.business_description,
       is_renewal: formData.is_renewal,
     };
 
     try {
-      await createBusinessPermit.mutateAsync(permitData);
+      if (formData.is_renewal) {
+        if (!selectedPermitId) {
+          toast({
+            title: "Please select a permit to renew",
+            variant: "destructive",
+          });
+          return;
+        }
+        const numId = parseInt(selectedPermitId);
+        if (isNaN(numId)) {
+          toast({
+            title: "Invalid permit selected",
+            variant: "destructive",
+          });
+          return;
+        }
+        const updateData = {
+          ...basePermitData,
+          status: "pending" as const,
+        };
+        await editBusinessPermit.mutateAsync({ id: numId, data: updateData });
+      } else {
+        const createData = {
+          ...basePermitData,
+          status: "pending" as const,
+        };
+        await createBusinessPermit.mutateAsync(createData);
+      }
       setFormData({
         business_name: "",
         business_type: "",
@@ -148,7 +229,10 @@ export default function BusinessPermitsPage() {
         business_description: "",
         is_renewal: false,
         agree_to_terms: false,
+        houseNum: 0,
+        status: "pending" as const,
       });
+      setSelectedPermitId("");
     } catch (err) {
       console.error("Submit error:", err);
     }
@@ -165,6 +249,10 @@ export default function BusinessPermitsPage() {
       </div>
     );
   }
+
+  const isSubmitting = formData.is_renewal ? editBusinessPermit.isPending : createBusinessPermit.isPending;
+  const submitText = formData.is_renewal ? "Submit Renewal" : "Submit Application";
+  const pendingText = formData.is_renewal ? "Submitting Renewal..." : "Submitting...";
 
   return (
     <div className="min-h-screen bg-background">
@@ -248,10 +336,36 @@ export default function BusinessPermitsPage() {
                           <Checkbox
                             id="renewal"
                             checked={formData.is_renewal}
-                            onCheckedChange={(checked) => setFormData({ ...formData, is_renewal: checked as boolean })}
+                            onCheckedChange={handleRenewalChange}
                           />
                           <Label htmlFor="renewal">This is a renewal application</Label>
                         </div>
+
+                        {formData.is_renewal && eligiblePermits.length > 0 && (
+                          <div>
+                            <Label htmlFor="existing_permit">Select Existing Business for Renewal *</Label>
+                            <Select value={selectedPermitId} onValueChange={handleSelectPermit}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose a completed business permit to renew" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {eligiblePermits.map((permit: BusinessPermit) => (
+                                  <SelectItem key={permit.id} value={String(permit.id)}>
+                                    {permit.business_name} ({permit.business_type})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {formData.is_renewal && eligiblePermits.length === 0 && (
+                          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <p className="text-sm text-yellow-800">
+                              No completed permits found. Please apply as a new business or check your applications.
+                            </p>
+                          </div>
+                        )}
 
                         <div>
                           <Label htmlFor="business_name">Business Name *</Label>
@@ -294,22 +408,40 @@ export default function BusinessPermitsPage() {
 
                         <div>
                           <Label htmlFor="business_address">Business Address *</Label>
-                          <Textarea
-                            id="business_address"
-                            value={formData.business_address}
-                            onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
-                            required
-                          />
+                          <Select
+                              value={formData.business_address}
+                              onValueChange={(value) => setFormData({ ...formData, business_address: value })}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select address" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {addresses.map((addr:any, i:any) => (
+                                  <SelectItem key={i} value={addr}>
+                                    {addr}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                         </div>
 
                         <div>
                           <Label htmlFor="owner_address">Owner Address *</Label>
-                          <Textarea
-                            id="owner_address"
-                            value={formData.owner_address}
-                            onChange={(e) => setFormData({ ...formData, owner_address: e.target.value })}
-                            required
-                          />
+                          <Select
+                              value={formData.owner_address}
+                              onValueChange={(value) => setFormData({ ...formData, owner_address: value })}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select address" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {addresses.map((addr:any, i:any) => (
+                                  <SelectItem key={i} value={addr}>
+                                    {addr}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                         </div>
 
                         <div>
@@ -355,10 +487,10 @@ export default function BusinessPermitsPage() {
                         <Button
                           type="submit"
                           className="w-full"
-                          disabled={createBusinessPermit.isPending}
+                          disabled={isSubmitting}
                         >
                           <FileText className="h-4 w-4 mr-2" />
-                          {createBusinessPermit.isPending ? "Submitting..." : "Submit Application"}
+                          {isSubmitting ? pendingText : submitText}
                         </Button>
                       </form>
                     </CardContent>

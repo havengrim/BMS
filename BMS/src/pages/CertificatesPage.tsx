@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -33,6 +34,7 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { validatePhilippinePhone } from "@/stores/validatePhone";
+import addresses from "@/data/addresses.json"
 
 const certificateTypes = [
   {
@@ -98,13 +100,13 @@ const getStatusColor = (status: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case "pending":
-      return "Pending Review";
+      return "Received";
     case "approved":
       return "Approved";
-    case "rejected":
+    case "Ready for Pickup":
       return "Rejected";
     case "completed":
-      return "Ready for Pickup";
+      return "Claimed";
     default:
       return "Unknown";
   }
@@ -113,10 +115,17 @@ const getStatusText = (status: string) => {
 export default function CertificatesPage() {
   const [selectedCertificate, setSelectedCertificate] = useState("");
   const [phoneError, setPhoneError] = useState("");
+   const [addressList, setAddressList] = useState<string[]>([]);
+
+  useEffect(() => {
+    setAddressList(addresses);
+  }, []);
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     middle_name: "",
+    houseNum: "",
     complete_address: "",
     contact_number: "",
     email_address: "",
@@ -182,6 +191,7 @@ useEffect(() => {
       first_name: formData.first_name,
       last_name: formData.last_name,
       middle_name: formData.middle_name,
+      houseNum: formData.houseNum, 
       complete_address: formData.complete_address,
       contact_number: formData.contact_number,
       email_address: formData.email_address,
@@ -199,6 +209,7 @@ useEffect(() => {
         first_name: "",
         last_name: "",
         middle_name: "",
+        houseNum: "",
         complete_address: "",
         contact_number: "",
         email_address: "",
@@ -352,15 +363,35 @@ useEffect(() => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="complete_address">Complete Address *</Label>
-                          <Textarea
-                            id="complete_address"
-                            value={formData.complete_address}
+                          <Label htmlFor="houseNum">House Number *</Label>
+                          <Input
+                            id="houseNum"
+                            type="number"
+                            value={formData.houseNum}
                             onChange={(e) =>
-                              setFormData({ ...formData, complete_address: e.target.value })
+                              setFormData({ ...formData, houseNum: e.target.value })
                             }
+                            placeholder="Enter your house number"
                             required
                           />
+                        </div>
+                        <div>
+                          <Label htmlFor="complete_address">Complete Address *</Label>
+                           <Select
+                              value={formData.complete_address}
+                              onValueChange={(value) => setFormData({ ...formData, complete_address: value })}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select address" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {addressList.map((addr, i) => (
+                                  <SelectItem key={i} value={addr}>
+                                    {addr}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>

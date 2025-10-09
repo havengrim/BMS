@@ -40,7 +40,8 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { validatePhilippinePhone } from "@/stores/validatePhone";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import addresses from "@/data/addresses.json"
 const incidentTypes = [
   {
     id: "noise-complaint",
@@ -152,6 +153,12 @@ const getPriorityColor = (priority: string) => {
 
 export default function BlotterPage() {
   const [selectedIncident, setSelectedIncident] = useState("");
+
+  const [addressList, setAddressList] = useState<string[]>([]);
+
+  useEffect(() => {
+    setAddressList(addresses);
+  }, []);
   const [formData, setFormData] = useState({
     complainant_name: "",
     contact_number: "",
@@ -439,42 +446,23 @@ export default function BlotterPage() {
 
                         <div>
                           <Label htmlFor="location">Location of Incident *</Label>
-                          <Textarea
-                            id="location"
-                            placeholder="Please provide the exact location where the incident occurred"
-                            value={formData.location}
-                            onChange={(e) =>
-                              setFormData({ ...formData, location: e.target.value })
-                            }
-                            required
-                          />
+                         <Select
+                              value={formData.location}
+                              onValueChange={(value) => setFormData({ ...formData, location: value })}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select address" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {addressList.map((addr, i) => (
+                                  <SelectItem key={i} value={addr}>
+                                    {addr}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                         </div>
 
-                        <div>
-                          <Label htmlFor="respondent_name">Respondent Name (if applicable)</Label>
-                          <Input
-                            id="respondent_name"
-                            placeholder="Name of the person involved in the incident"
-                            value={formData.respondent_name}
-                            onChange={(e) =>
-                              setFormData({ ...formData, respondent_name: e.target.value })
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="description">Detailed Description *</Label>
-                          <Textarea
-                            id="description"
-                            placeholder="Please provide a detailed description of what happened"
-                            value={formData.description}
-                            onChange={(e) =>
-                              setFormData({ ...formData, description: e.target.value })
-                            }
-                            className="min-h-[100px]"
-                            required
-                          />
-                        </div>
 
                         <div>
                           <Label htmlFor="witnesses">Witnesses (if any)</Label>

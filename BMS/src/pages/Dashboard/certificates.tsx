@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import type React from "react"
 import { useState } from "react"
@@ -45,8 +45,12 @@ import {
   User,
   Edit,
   Trash2,
+  Download,
 } from "lucide-react"
 import { useCertificates, useEditCertificate, useDeleteCertificate, type Certificate, type Status } from "@/stores/useCertificates"
+import Docxtemplater from 'docxtemplater'
+import PizZip from 'pizzip'
+import { saveAs } from 'file-saver'
 
 const certificateTypes = [
   "All",
@@ -153,6 +157,90 @@ export default function Certificates() {
       },
     })
   }
+
+const formatDate = (date: Date) => {
+  const day = date.getDate();
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const month = monthNames[date.getMonth()];
+  const year = date.getFullYear();
+
+  const ordinal = (n: number) => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  return { day: ordinal(day), month, year };
+};
+
+const generateCertificate = async (certificate: Certificate) => {
+  try {
+    let templateFile = "";
+
+    switch (certificate.certificate_type) {
+      case "Certificate of Indigency":
+        templateFile = "/templates/indigency.docx";
+        break;
+      case "Certificate of Residency":
+        templateFile = "/templates/residency.docx";
+        break;
+      // Add other certificate types if needed
+      default:
+        throw new Error("Unsupported certificate type");
+    }
+
+    // Load the DOCX template
+    const response = await fetch(templateFile);
+    if (!response.ok) throw new Error(`Failed to load template: ${response.status}`);
+    const buffer = await response.arrayBuffer();
+    const zip = new PizZip(buffer);
+
+    const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+    // Construct full name safely
+    const fullName = [certificate.first_name, certificate.middle_name, certificate.last_name]
+      .filter(Boolean)
+      .join(" ");
+
+    const address = certificate.complete_address || "";
+    const purpose = certificate.purpose || "";
+    const userAge = certificate.user_age ? certificate.user_age.toString() : "";
+
+    // Format today's date
+    const { day, month, year } = formatDate(new Date());
+
+    // Render template
+    doc.render({
+      name: fullName.toUpperCase(),
+      address: address.toUpperCase(),
+      purpose: purpose.toUpperCase(),
+      age: userAge,
+      date: day,
+      month,
+      year,
+    });
+
+    // Generate DOCX blob and save
+    const out = doc.getZip().generate({
+      type: "blob",
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+
+    saveAs(out, `${certificate.request_number}_${certificate.certificate_type.replace(/\s+/g, "_")}.docx`);
+  } catch (error: any) {
+    console.error("Error generating certificate:", error);
+    if (error.properties?.errors) {
+      error.properties.errors.forEach((subError: any, index: number) => {
+        console.error(`Sub-error ${index + 1}:`, subError);
+      });
+    }
+    alert("Failed to generate certificate. Check console for details.");
+  }
+};
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -277,7 +365,7 @@ export default function Certificates() {
                           className="pl-8"
                         />
                       </div>
-                      <Select  value={selectedStatus}
+                      <Select value={selectedStatus}
                         onValueChange={(value) => setSelectedStatus(value as Status | "All")}>
                         <SelectTrigger className="w-full lg:w-40">
                           <SelectValue placeholder="All Statuses" />
@@ -411,6 +499,25 @@ export default function Certificates() {
                                         <p>Edit Certificate</p>
                                       </TooltipContent>
                                     </Tooltip>
+                                   {(certificate.certificate_type === "Certificate of Indigency" ||
+                                      certificate.certificate_type === "Certificate of Residency") &&
+                                      certificate.status === "completed" && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => generateCertificate(certificate)}
+                                              className="h-8 w-8 p-0"
+                                            >
+                                              <Download className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Download Certificate</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                    )}
                                     <AlertDialog>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
@@ -523,6 +630,10 @@ export default function Certificates() {
                               <p>
                                 {selectedCertificate.first_name} {selectedCertificate.last_name}
                               </p>
+                            </div>
+                            <div>
+                              <Label className="font-medium">Age:</Label>
+                              <p>{selectedCertificate.user_age?.toString() ?? "N/A"}</p>
                             </div>
                             <div>
                               <Label className="font-medium">Email Address:</Label>

@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 from django.contrib.auth.models import User
 
@@ -10,6 +10,7 @@ class CertificateRequest(models.Model):
     last_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     complete_address = models.TextField()
+    houseNum = models.PositiveIntegerField(null=True, blank=True)
     contact_number = models.CharField(max_length=20)
     email_address = models.EmailField()
     purpose = models.TextField()
@@ -26,15 +27,50 @@ class CertificateRequest(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now)
 
+    CERTIFICATE_PREFIXES = {
+    "Certificate of Residency": "CR",
+    "Certificate of Indigency": "CI",
+   
+        }
+
     def save(self, *args, **kwargs):
         if not self.request_number:
-            prefix = self.certificate_type[:2].upper()
-            last = CertificateRequest.objects.filter(certificate_type=self.certificate_type).count() + 1
-            self.request_number = f"{prefix}-{last:03d}"
+            prefix = self.CERTIFICATE_PREFIXES.get(self.certificate_type, self.certificate_type[:2].upper())
+            with transaction.atomic():
+                existing_numbers = (
+                    CertificateRequest.objects
+                    .filter(certificate_type=self.certificate_type)
+                    .values_list('request_number', flat=True)
+                )
+                
+                numbers = []
+                for rn in existing_numbers:
+                    try:
+                        numbers.append(int(rn.split('-')[1]))
+                    except (IndexError, ValueError):
+                        continue
+                next_number = max(numbers, default=0) + 1
+                self.request_number = f"{prefix}-{next_number:03d}"
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.request_number} - {self.first_name} {self.last_name}"
+
+    def get_user_birthdate(self):
+        if self.user and hasattr(self.user, 'profile'):
+            return self.user.profile.birthdate
+        return None
+
+    def user_age(self):
+        if self.user and hasattr(self.user, 'profile'):
+            today = timezone.now().date()
+            birthdate = self.user.profile.birthdate
+            return today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+        return None
+
+class CertificateCounter(models.Model):
+    certificate_type = models.CharField(max_length=50, unique=True)
+    last_number = models.PositiveIntegerField(default=0)
 
 class BusinessPermit(models.Model):
     STATUS_CHOICES = [
@@ -51,9 +87,10 @@ class BusinessPermit(models.Model):
     business_address = models.TextField()
     contact_number = models.CharField(max_length=20)
     owner_address = models.TextField()
+    houseNum = models.PositiveIntegerField(null=True, blank=True)
     business_description = models.TextField(blank=True)
     is_renewal = models.BooleanField(default=False)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # <--- NEW FIELD
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

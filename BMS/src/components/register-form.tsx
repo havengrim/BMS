@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,34 +18,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import images from "@/assets/images";
-
 import { useRegister } from "@/stores/useAccount";
-import  Spinner  from "@/components/ui/spinner";  // <-- import Spinner
+import Spinner from "@/components/ui/spinner";
 import { validatePhilippinePhone } from "@/stores/validatePhone";
-
+import addresses from "@/data/addresses.json"
 type RegisterFormData = {
-  name:string;
+  name: string;
   username: string;
   email: string;
   password: string;
   confirm_password: string;
   contact_number: string;
+  houseNum: string; // ✅ added
   address: string;
   civil_status: string;
   birthdate: string;
 };
 
-export function RegisterForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function RegisterForm({ className, ...props }: React.ComponentProps<"div">) {
   const [form, setForm] = useState<RegisterFormData>({
-    name:"",
+    name: "",
     username: "",
     email: "",
     password: "",
     confirm_password: "",
     contact_number: "",
+    houseNum: "", // ✅ added
     address: "",
     civil_status: "",
     birthdate: "",
@@ -55,21 +53,26 @@ export function RegisterForm({
   const { mutate: register, status } = registerMutation;
   const isLoading = status === "pending";
 
-    const [phoneError, setPhoneError] = useState("");
-       const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-            const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
-        
-            setForm({ ...form, contact_number: value });
-        
-            if (value.length > 0 && !validatePhilippinePhone(value)) {
-              setPhoneError("Invalid Phone Number");
-            } else {
-              setPhoneError("");
-            }
-          };
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const [phoneError, setPhoneError] = useState("");
+
+   const [addressList, setAddressList] = useState<string[]>([]);
+
+  useEffect(() => {
+    setAddressList(addresses);
+  }, []);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+    setForm({ ...form, contact_number: value });
+
+    if (value.length > 0 && !validatePhilippinePhone(value)) {
+      setPhoneError("Invalid Phone Number");
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -89,9 +92,11 @@ export function RegisterForm({
             Register to access the Barangay Management System
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4">
+
               {/* Username */}
               <div className="grid gap-2">
                 <Label htmlFor="username">Username</Label>
@@ -106,19 +111,19 @@ export function RegisterForm({
                 />
               </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="name">Full Name:</Label>
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="Juan Dela Cruz"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
+              {/* Full Name */}
+              <div className="grid gap-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Juan Dela Cruz"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
               {/* Email */}
               <div className="grid gap-2">
@@ -168,7 +173,7 @@ export function RegisterForm({
                     id="contact_number"
                     type="tel"
                     inputMode="numeric"
-                    maxLength={13} // to handle +639xxxxxxxxx
+                    maxLength={13}
                     value={form.contact_number}
                     onChange={handlePhoneChange}
                     placeholder="09XXXXXXXXX or +639XXXXXXXXX"
@@ -178,18 +183,38 @@ export function RegisterForm({
                 </div>
               </div>
 
-              {/* Address */}
+              {/* House Number ✅ */}
               <div className="grid gap-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="houseNum">House Number</Label>
                 <Input
-                  id="address"
-                  name="address"
-                  type="text"
-                  placeholder="Street, Barangay, Municipality"
-                  value={form.address}
+                  id="houseNum"
+                  name="houseNum"
+                  type="number"
+                  placeholder="e.g. 123"
+                  value={form.houseNum}
                   onChange={handleChange}
                   required
                 />
+              </div>
+
+              {/* Address */}
+              <div className="grid gap-2">
+                <Label htmlFor="address">Address</Label>
+                <Select
+                    value={form.address}
+                    onValueChange={(value) => setForm({ ...form, address: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select address" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {addressList.map((addr, i) => (
+                        <SelectItem key={i} value={addr}>
+                          {addr}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
               </div>
 
               {/* Civil Status */}

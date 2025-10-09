@@ -83,3 +83,45 @@ export const useDeleteBusinessPermit = () => {
     },
   });
 };
+
+export const useRenewBusinessPermit = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    // Pass the full old record and we'll make a new one
+    mutationFn: (oldPermit: BusinessPermit) => {
+      const renewalData: CreateBusinessPermitInput = {
+        
+        business_name: oldPermit.business_name,
+        business_type: oldPermit.business_type,
+        owner_name: oldPermit.owner_name,
+        business_address: oldPermit.business_address,
+        contact_number: oldPermit.contact_number,
+        owner_address: oldPermit.owner_address,
+        houseNum: oldPermit.houseNum,
+        business_description: oldPermit.business_description,
+        is_renewal: true,
+        status: "pending",
+      };
+
+      return api
+        .post(BUSINESS_PERMIT_URL, renewalData, { withCredentials: true })
+        .then((res) => res.data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Renewal Submitted",
+        description: "Your renewal has been submitted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["business-permits"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit renewal.",
+        variant: "destructive",
+      });
+    },
+  });
+};

@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast"
 export type Status = "pending" | "approved" | "rejected" | "completed";
 // Types
 export type Certificate = {
+  user_age: number;
   id: number
   certificate_type: string
   request_number: string
