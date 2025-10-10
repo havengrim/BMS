@@ -59,20 +59,18 @@ export const useAuthStore = create<AuthState>()(
           set({ loading: true });
           console.log("[AuthStore] Attempting token refresh...");
 
-          const refreshToken = get().refreshToken || Cookies.get("refresh_token");
-          if (!refreshToken) throw new Error("No refresh token available");
-
-          // Send refresh token in POST body
-          const res = await apiClient.post("/api/token/refresh/", { refresh: refreshToken });
+          // Send empty body; backend reads HttpOnly cookie
+          const res = await apiClient.post("/api/token/refresh/", {}, { withCredentials: true });
           const newAccessToken = res.data?.access;
           if (!newAccessToken) throw new Error("No access token returned");
 
-          // Update access token in store and cookie
+          // Update access token in store and JS cookie
           get().setTokens(newAccessToken);
 
           // Fetch user data using new access token
           const userRes = await apiClient.get("/api/auth/user/", {
             headers: { Authorization: `Bearer ${newAccessToken}` },
+            withCredentials: true,
           });
           set({ user: userRes.data });
           console.log("[AuthStore] Token refresh successful, user data updated:", userRes.data);
