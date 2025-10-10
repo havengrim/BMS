@@ -88,11 +88,15 @@ CHANNEL_LAYERS = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://127.0.0.1:5173",  # optional, just in case
+    "http://127.0.0.1:5173", 
+    "https://www.sinco.website",
+    "https://sindalanconnect.vercel.app"
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://www.sinco.website",
+    "https://sindalanconnect.vercel.app"
 ]
 CORS_ALLOW_CREDENTIALS = True
 SESSION_COOKIE_SECURE = False 

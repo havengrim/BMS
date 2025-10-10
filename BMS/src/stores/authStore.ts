@@ -43,35 +43,30 @@ export const useAuthStore = create<AuthState>()(
         
       },
 
-      refreshToken: async () => {
+        refreshToken: async () => {
         try {
           set({ loading: true });
-          console.log("useAuthStore: Attempting to refresh token...");
-          const res = await apiClient.post(
-            "/api/token/refresh/",
-            {},
-            { withCredentials: true }
-          );
-          console.log("useAuthStore: Refresh token response:", res.data);
-          const accessToken = res.data?.access || Cookies.get("access_token");
+          console.log("[AuthStore] Attempting token refresh...");
 
-          if (accessToken) {
-            // Set cookie to expire in 1 hour
-            Cookies.set("access_token", accessToken, { expires: 1 / 24 });
-            set({ token: accessToken });
-            console.log("useAuthStore: New access token set:", accessToken);
-          } else {
-            console.warn("useAuthStore: No access token received from refresh");
-            throw new Error("No access token received");
-          }
+          // If backend reads refresh token from HttpOnly cookie, no body is needed
+          const res = await apiClient.post("/api/token/refresh/");
 
+          const accessToken = res.data?.access;
+          if (!accessToken) throw new Error("No access token returned from refresh");
+
+          // Store access token in cookie
+          Cookies.set("access_token", accessToken, { expires: 1 / 24, secure: true, sameSite: "Lax" });
+          set({ token: accessToken });
+          console.log("[AuthStore] Access token updated:", accessToken);
+
+          // Fetch user data using new access token
           const userRes = await apiClient.get("/api/auth/user/", {
-            withCredentials: true,
+            headers: { Authorization: `Bearer ${accessToken}` },
           });
-          console.log("useAuthStore: User data fetched:", userRes.data);
           set({ user: userRes.data });
-        } catch (error) {
-          console.error("useAuthStore: Refresh token failed:", error);
+          console.log("[AuthStore] User data refreshed:", userRes.data);
+        } catch (err) {
+          console.error("[AuthStore] Token refresh failed:", err);
           get().logout();
         } finally {
           set({ loading: false });
