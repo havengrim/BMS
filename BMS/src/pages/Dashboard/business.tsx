@@ -162,6 +162,7 @@ export default function BusinessPermitDashboard() {
             business_description: editingPermit.business_description,
             is_renewal: editingPermit.is_renewal,
             status: editingPermit.status,
+            houseNum: editingPermit.houseNum
           },
         },
         {

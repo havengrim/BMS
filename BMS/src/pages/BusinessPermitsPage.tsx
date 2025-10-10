@@ -16,7 +16,7 @@ import { Building, FileText, Clock, CheckCircle, AlertTriangle, Package } from "
 import { Footer } from "@/components/footer";
 import { useAuthStore } from "@/stores/authStore";
 import { useBusinessPermits, useCreateBusinessPermit, useEditBusinessPermit } from "@/stores/useBusinessPermits";
-import { type BusinessPermit } from "@/types/business-permit";
+import { type BusinessPermit, type EditBusinessPermitInput } from "@/types/business-permit";
 import { validatePhilippinePhone } from "@/stores/validatePhone";
 import addresses from "@/data/addresses.json"
 const businessTypes = [
@@ -207,11 +207,21 @@ export default function BusinessPermitsPage() {
           });
           return;
         }
-        const updateData = {
-          ...basePermitData,
-          status: "pending" as const,
-        };
-        await editBusinessPermit.mutateAsync({ id: numId, data: updateData });
+        const updateData: EditBusinessPermitInput = {
+            id: numId, // ✅ include id inside data
+            business_name: formData.business_name,
+            business_type: formData.business_type,
+            owner_name: formData.owner_name,
+            business_address: formData.business_address,
+            houseNum: formData.houseNum, // ✅ ensure houseNum exists
+            contact_number: formData.contact_number,
+            owner_address: formData.owner_address,
+            business_description: formData.business_description,
+            is_renewal: formData.is_renewal,
+            status: "pending"
+          };
+
+          await editBusinessPermit.mutateAsync({ id: numId, data: updateData });
       } else {
         const createData = {
           ...basePermitData,
