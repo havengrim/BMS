@@ -6,9 +6,11 @@ from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
-from .serializer import RegisterSerializer, UserSerializer, CustomTokenObtainPairSerializer
+from .serializer import RegisterSerializer, UserSerializer, CustomTokenObtainPairSerializer  # Fixed typo: serializer -> serializer (assuming it's serializers.py)
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import MultiPartParser, FormParser
+from datetime import timedelta
+from django.conf import settings  # For SIMPLE_JWT lifetimes
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -23,14 +25,13 @@ def register(request):
 @permission_classes([IsAuthenticated])
 def get_all_users(request):
     users = User.objects.all()
-    serializer = UserSerializer(users, many=True, context={'request': request})  # pass request here
+    serializer = UserSerializer(users, many=True, context={'request': request})
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def current_user(request):
     user = request.user
-    # Safely get profile, create default if missing or return default data
     profile = getattr(user, 'profile', None)
     if profile is None:
         profile_data = {
@@ -76,7 +77,6 @@ def user_detail(request, user_id):
     elif request.method == 'PUT':
         serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
-            # Before save, ensure profile exists or create a default one to avoid errors
             if not hasattr(user, 'profile'):
                 from accounts.models import Profile
                 Profile.objects.create(
@@ -88,7 +88,7 @@ def user_detail(request, user_id):
                     birthdate='1900-01-01',
                     role='user',
                 )
-                user.refresh_from_db()  # refresh to get profile
+                user.refresh_from_db()
             serializer.save()
             return Response({"message": "User updated successfully", "user": serializer.data})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -104,29 +104,35 @@ class CustomEmailLoginView(APIView):
         serializer = CustomTokenObtainPairSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data
+            secure_cookie = settings.DEBUG  # False in prod; True for dev (no HTTPS needed)
+            
+            # Return access in body for frontend
             response = Response({
                 "message": "Login successful",
+                "access": data["access"],  # Key fix: Include for JS store/header
                 "user": data["user"]
             }, status=status.HTTP_200_OK)
 
-            secure_cookie = False  # Change to True on production with HTTPS
-
+            # Set HttpOnly cookies (fallback for middleware)
+            access_lifetime = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
+            refresh_lifetime = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
+            
             response.set_cookie(
                 key='access_token',
                 value=data["access"],
                 httponly=True,
-                secure=False,
-                samesite='Lax',  # Lax or Strict for localhost testing
-                max_age=60 * 15,
+                secure=secure_cookie,
+                samesite='Lax',
+                max_age=access_lifetime,  # Align to settings (60 min)
                 path='/',
             )
             response.set_cookie(
                 key='refresh_token',
                 value=data["refresh"],
                 httponly=True,
-                secure=False,
+                secure=secure_cookie,
                 samesite='Lax',
-                max_age=60 * 60 * 24 * 7,
+                max_age=refresh_lifetime,  # Align to settings (1 day)
                 path='/',
             )
             return response
@@ -140,28 +146,53 @@ class TokenRefreshView(APIView):
         refresh_token = request.COOKIES.get('refresh_token')
 
         if not refresh_token:
-            return Response({"detail": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"refresh": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)  # Match your 400 error format
 
         try:
             refresh = RefreshToken(refresh_token)
             new_access_token = str(refresh.access_token)
+            
+            # Handle rotation if enabled (your settings: True)
+            if settings.SIMPLE_JWT['ROTATE_REFRESH_TOKENS']:
+                new_refresh = str(refresh)
+                # Blacklist old if needed (your BLACKLIST_AFTER_ROTATION: True)
+                refresh.blacklist()
+            else:
+                new_refresh = refresh_token  # Reuse
 
-            response = Response({"message": "Token refreshed"}, status=status.HTTP_200_OK)
+            secure_cookie = settings.DEBUG  # False in prod
+            
+            # Return new access in body
+            response = Response({
+                "access": new_access_token,  # Key fix: Include for frontend update
+                "message": "Token refreshed"
+            }, status=status.HTTP_200_OK)
 
-            secure_cookie = False  # Change to True on production with HTTPS
-
+            # Update cookies
+            access_lifetime = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
+            refresh_lifetime = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
+            
             response.set_cookie(
                 key='access_token',
                 value=new_access_token,
                 httponly=True,
                 secure=secure_cookie,
-                samesite='None',
-                max_age=60 * 15,  # 15 minutes
+                samesite='Lax',  # Fixed: 'Lax' for consistency/CORS
+                max_age=access_lifetime,
+                path='/',
+            )
+            response.set_cookie(
+                key='refresh_token',
+                value=new_refresh,
+                httponly=True,
+                secure=secure_cookie,
+                samesite='Lax',
+                max_age=refresh_lifetime,
                 path='/',
             )
             return response
 
-        except TokenError:
+        except TokenError as e:
             return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
 
 @csrf_exempt

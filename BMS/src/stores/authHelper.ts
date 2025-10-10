@@ -1,23 +1,28 @@
 import { api } from '@/lib/api';
+import type { User } from './useAccount';
 
-export async function fetchCurrentUser(
-  setUser: (user: any) => void,
+export const fetchCurrentUser = async (
+  setUser: (user: User) => void,
   clearAuth: () => void,
   setLoading: (loading: boolean) => void,
-  refreshToken: () => Promise<void>
-) {
+  refreshAccessToken: () => Promise<void>
+) => {
   setLoading(true);
   try {
-    const res = await api.get('/api/auth/user/', { withCredentials: true });
-    setUser(res.data);
+    // Use cookies/middleware; optional: add header from store
+    const { data: user } = await api.get('/api/auth/user/', { 
+      withCredentials: true,
+      // headers: { Authorization: `Bearer ${useAuthStore.getState().accessToken}` },  // If not using middleware
+    });
+    setUser(user);
   } catch (err: any) {
     if (err.response?.status === 401) {
       try {
-        await refreshToken();
-
-        const res = await api.get('/api/auth/user/', { withCredentials: true });
-        setUser(res.data);
-      } catch (refreshError) {
+        await refreshAccessToken();  // Auto-refresh
+        // Retry fetch after refresh
+        const { data: user } = await api.get('/api/auth/user/', { withCredentials: true });
+        setUser(user);
+      } catch (refreshErr) {
         clearAuth();
       }
     } else {
@@ -26,4 +31,4 @@ export async function fetchCurrentUser(
   } finally {
     setLoading(false);
   }
-}
+};
