@@ -43,8 +43,8 @@ export default function SindalanConnectChatbot() {
   const [isTyping, setIsTyping] = useState(false)
   const [canStop, setCanStop] = useState(false)
 
-  const typewriterRef = useRef<number | null>(null)
-  const thinkingRef = useRef<number | null>(null)
+  const typewriterRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const thinkingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
   // React Query mutation to call chatbot API
