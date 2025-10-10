@@ -6,32 +6,46 @@ import type { User } from "@/types/auth";
 
 type AuthState = {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   loading: boolean;
 
   isAuthenticated: () => boolean;
   setUser: (user: User) => void;
+  setTokens: (accessToken: string, refreshToken?: string) => void;
   setLoading: (loading: boolean) => void;
   clearAuth: () => void;
   logout: () => void;
-  refreshToken: () => Promise<void>;
+  refreshAccessToken: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get, storeApi) => ({
       user: null,
-      token: null,
+      accessToken: null,
+      refreshToken: null,
       loading: false,
 
-      isAuthenticated: () => !!get().user && !!get().token,
+      isAuthenticated: () => !!get().user && !!get().accessToken,
 
       setUser: (user: User) => set({ user }),
+
+      setTokens: (accessToken: string, refreshToken?: string) => {
+        set({ accessToken, refreshToken: refreshToken ?? get().refreshToken });
+
+        Cookies.set("access_token", accessToken, { expires: 1 / 24, secure: true, sameSite: "Lax" });
+        if (refreshToken) {
+          Cookies.set("refresh_token", refreshToken, { expires: 7, secure: true, sameSite: "Lax" }); // longer expiry
+        }
+      },
+
       setLoading: (loading: boolean) => set({ loading }),
 
       clearAuth: () => {
-        set({ user: null, token: null });
+        set({ user: null, accessToken: null, refreshToken: null });
         Cookies.remove("access_token", { path: "/", secure: true, sameSite: "Lax" });
+        Cookies.remove("refresh_token", { path: "/", secure: true, sameSite: "Lax" });
         storeApi.persist.clearStorage();
         localStorage.removeItem("auth-storage");
       },
@@ -40,30 +54,28 @@ export const useAuthStore = create<AuthState>()(
         get().clearAuth();
       },
 
-      refreshToken: async () => {
+      refreshAccessToken: async () => {
         try {
           set({ loading: true });
           console.log("[AuthStore] Attempting token refresh...");
 
-          // Backend reads refresh token from HttpOnly cookie, no body needed
-          const res = await apiClient.post("/api/token/refresh/", {}, { withCredentials: true });
+          const refreshToken = get().refreshToken || Cookies.get("refresh_token");
+          if (!refreshToken) throw new Error("No refresh token available");
 
-          const accessToken = res.data?.access;
-          if (!accessToken) throw new Error("No access token returned from refresh");
+          // Send refresh token in POST body
+          const res = await apiClient.post("/api/token/refresh/", { refresh: refreshToken });
+          const newAccessToken = res.data?.access;
+          if (!newAccessToken) throw new Error("No access token returned");
 
-          // Store JS-readable access token in cookie
-          Cookies.set("access_token", accessToken, { expires: 1 / 24, secure: true, sameSite: "Lax" });
-          set({ token: accessToken });
-          console.log("[AuthStore] Access token updated:", accessToken);
+          // Update access token in store and cookie
+          get().setTokens(newAccessToken);
 
-          // Fetch current user using new access token
+          // Fetch user data using new access token
           const userRes = await apiClient.get("/api/auth/user/", {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            withCredentials: true, // optional if backend reads from cookie
+            headers: { Authorization: `Bearer ${newAccessToken}` },
           });
-
           set({ user: userRes.data });
-          console.log("[AuthStore] User data refreshed:", userRes.data);
+          console.log("[AuthStore] Token refresh successful, user data updated:", userRes.data);
         } catch (err) {
           console.error("[AuthStore] Token refresh failed:", err);
           get().logout();
@@ -76,7 +88,8 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       partialize: (state: AuthState) => ({
         user: state.user,
-        token: state.token,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
       }),
     }
   )
