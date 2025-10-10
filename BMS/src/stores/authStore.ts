@@ -55,32 +55,46 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refreshAccessToken: async () => {
-        try {
-          set({ loading: true });
-          console.log("[AuthStore] Attempting token refresh...");
+  try {
+    set({ loading: true });
+    console.log("[AuthStore] Attempting token refresh...");
 
-          // Send empty body; backend reads HttpOnly cookie
-          const res = await apiClient.post("/api/token/refresh/", {}, { withCredentials: true });
-          const newAccessToken = res.data?.access;
-          if (!newAccessToken) throw new Error("No access token returned");
+    // Get refresh token from store or cookie (fallback)
+    const currentRefresh = get().refreshToken || Cookies.get("refresh_token");
+    if (!currentRefresh) {
+      throw new Error("No refresh token available");
+    }
 
-          // Update access token in store and JS cookie
-          get().setTokens(newAccessToken);
+    // Send refresh token in body (as per SimpleJWT)
+    const res = await apiClient.post("/api/token/refresh/", { 
+      refresh: currentRefresh 
+    });
+    
+    const newAccessToken = res.data?.access;
+    if (!newAccessToken) throw new Error("No access token returned");
 
-          // Fetch user data using new access token
-          const userRes = await apiClient.get("/api/auth/user/", {
-            headers: { Authorization: `Bearer ${newAccessToken}` },
-            withCredentials: true,
-          });
-          set({ user: userRes.data });
-          console.log("[AuthStore] Token refresh successful, user data updated:", userRes.data);
-        } catch (err) {
-          console.error("[AuthStore] Token refresh failed:", err);
-          get().logout();
-        } finally {
-          set({ loading: false });
-        }
-      },
+    // Update tokens (backend may return new refresh too)
+    get().setTokens(newAccessToken, res.data?.refresh || undefined);
+
+    // Fetch user with new token
+    const userRes = await apiClient.get("/api/auth/user/", {
+      headers: { Authorization: `Bearer ${newAccessToken}` },
+    });
+    set({ user: userRes.data });
+    console.log("[AuthStore] Token refresh successful, user data updated:", userRes.data);
+  } catch (err: unknown) {
+    // TS-safe error handling
+    console.error("[AuthStore] Token refresh failed:", err);
+    if (err instanceof Error) {
+      console.error("Error details:", err.message);
+      // Optional: Log response if AxiosError
+      // if (isAxiosError(err)) { console.error(err.response?.data); }
+    }
+    get().logout();
+  } finally {
+    set({ loading: false });
+  }
+},
     }),
     {
       name: "auth-storage",
