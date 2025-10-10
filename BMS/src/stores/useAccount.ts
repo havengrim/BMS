@@ -177,17 +177,16 @@ export const useUsers = () => {
 };
 
 export function useLoadCurrentUser() {
-  const setUser = useAuthStore(s => s.setUser);
-  const clearAuth = useAuthStore(s => s.clearAuth);
-  const setLoading = useAuthStore(s => s.setLoading);
-  const refreshToken = useAuthStore(s => s.refreshToken);
+  const setUser = useAuthStore((s) => s.setUser);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const setLoading = useAuthStore((s) => s.setLoading);
+  const refreshAccessToken = useAuthStore((s) => s.refreshAccessToken);
 
   const hasFetched = useRef(false);
-
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    fetchCurrentUser(setUser, clearAuth, setLoading, refreshToken);
-  }, [setUser, clearAuth, setLoading, refreshToken]);
+    fetchCurrentUser(setUser, clearAuth, setLoading, refreshAccessToken);
+  }, [setUser, clearAuth, setLoading, refreshAccessToken]);
 }
