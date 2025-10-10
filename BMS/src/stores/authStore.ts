@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
           console.log("[AuthStore] Attempting token refresh...");
 
           // If backend reads refresh token from HttpOnly cookie, no body is needed
-          const res = await apiClient.post("/api/token/refresh/");
+          const res = await apiClient.post("/api/token/refresh/", {}, { withCredentials: true });
 
           const accessToken = res.data?.access;
           if (!accessToken) throw new Error("No access token returned from refresh");
