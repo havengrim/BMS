@@ -238,7 +238,6 @@ const LocationPicker = ({
         </Button>
       </div>
 
-
       <div className="relative">
         <div
           ref={mapRef}
@@ -312,30 +311,58 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
           description: `${file.name} exceeds the 10MB limit.`,
           variant: "destructive",
         });
+        e.target.value = ''; // Reset input
         return;
       }
+      console.log('File selected:', { name: file.name, size: file.size, type: file.type, isFile: file instanceof File }); // Debug log
+      setFormData((prev) => ({ ...prev, media_file: file }));
+      e.target.value = ''; // Reset input to prevent re-selection issues
+    } else {
+      setFormData((prev) => ({ ...prev, media_file: null }));
     }
-    setFormData((prev) => ({ ...prev, media_file: file }));
   };
 
   const removeFile = () => {
     setFormData((prev) => ({ ...prev, media_file: null }));
+    // If you have a ref to the input, reset it too: document.getElementById('media_file')?.value = '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Ensure proper rounding before submitting
-    const roundedLatitude = parseFloat(formData.latitude.toFixed(6));
-    const roundedLongitude = parseFloat(formData.longitude.toFixed(6));
+    // Debug: Log full formData before submit
+    console.log('Submitting formData:', formData);
+    if (formData.media_file) {
+      console.log('Media file details:', {
+        name: formData.media_file.name,
+        size: formData.media_file.size,
+        type: formData.media_file.type,
+        isFile: formData.media_file instanceof File,
+      });
+    }
 
-    const cleanedFormData = {
-      ...formData,
-      latitude: roundedLatitude,
-      longitude: roundedLongitude,
-    };
+    const submissionData = new FormData();
+    submissionData.append("name", formData.name);
+    submissionData.append("incident_type", formData.incident_type);
+    submissionData.append("description", formData.description);
+    submissionData.append("location_text", formData.location_text);
+    submissionData.append("latitude", formData.latitude.toString());
+    submissionData.append("longitude", formData.longitude.toString());
+    submissionData.append("phone_number", formData.phone_number);
+    if (formData.media_file instanceof File) { // Defensive: only append if valid File
+      submissionData.append("media_file", formData.media_file);
+      console.log('Appended media_file to FormData'); // Debug
+    } else {
+      console.error('Invalid media_file - skipping append:', formData.media_file);
+      toast({
+        title: "Invalid media file",
+        description: "Please select a valid file and try again.",
+        variant: "destructive",
+      });
+      return; // Abort submit
+    }
 
-    createEmergency(cleanedFormData, {
+    createEmergency(submissionData, {
       onSuccess: () => {
         setFormData({
           name: "",
@@ -343,7 +370,7 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
           description: "",
           location_text: "",
           phone_number: "",
-          media_file: null,
+          media_file: null, // Explicit null
           latitude: 0,
           longitude: 0,
         });
@@ -353,7 +380,8 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
           description: "Your emergency report has been submitted successfully.",
         });
       },
-      onError: () => {
+      onError: (error) => { // Enhanced: log error details
+        console.error('Submission error:', error);
         toast({
           title: "Submission failed",
           description: "An error occurred while submitting your report. Please try again.",
@@ -371,7 +399,7 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
     formData.phone_number &&
     formData.latitude !== 0 &&
     formData.longitude !== 0 &&
-    formData.media_file;
+    formData.media_file instanceof File; // Changed: explicit File check
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -472,7 +500,8 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
                     <span className="text-sm text-gray-600">
                       Click to upload image, audio, or video
                     </span>
-                    <Input
+                    {/* Changed: Use native <input> for file handling */}
+                    <input
                       id="media_file"
                       type="file"
                       accept="image/*,audio/*,video/*"

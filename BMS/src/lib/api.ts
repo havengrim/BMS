@@ -4,9 +4,9 @@ import { useAuthStore } from '@/stores/authStore';
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true, // For HttpOnly refresh cookie
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // headers: {
+  //   'Content-Type': 'application/json',
+  // },
 });
 
 // Add request interceptor to attach access token

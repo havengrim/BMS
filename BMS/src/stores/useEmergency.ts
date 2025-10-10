@@ -4,9 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-
 export type EmergencyReport = {
-id: string;
+  id: string;
   name: string;
   incident_type: string;
   description: string;
@@ -16,19 +15,19 @@ id: string;
   latitude: number;
   longitude: number;
   submitted_at: string;
-  created_at:string;
+  created_at: string;
   updated_at: string;
   phone_number: string;
-  alert_message:string;
+  alert_message: string;
 };
 
 export type CreateEmergencyInput = {
   name: string;
   incident_type: string;
   description: string;
-  media_file?: File | null; // File upload
+  media_file?: File | null;  // File upload
   location_text: string;
-  latitude: number;
+  latitude: string;
   longitude: number;
 };
 
@@ -46,7 +45,7 @@ export type EditEmergencyInput = {
 const EMERGENCY_BASE_URL = "/api/emergencies";
 
 // GET all emergencies
-export const useEmergencies = () =>
+export const useEmergencies = (enabled = true) =>
   useQuery<EmergencyReport[], Error>({
     queryKey: ["emergencies"],
     queryFn: () =>
@@ -54,6 +53,7 @@ export const useEmergencies = () =>
         .get(`${EMERGENCY_BASE_URL}/`, { withCredentials: true })
         .then((res) => res.data),
     staleTime: 1000 * 60 * 5,
+    enabled,
   });
 
 // GET single emergency by ID
@@ -76,30 +76,30 @@ export const useCreateEmergency = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (data: CreateEmergencyInput) => {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("incident_type", data.incident_type);
-      formData.append("description", data.description);
-      formData.append("location_text", data.location_text);
-      formData.append("latitude", data.latitude.toString());
-      formData.append("longitude", data.longitude.toString());
-      if (data.media_file) {
-        formData.append("media_file", data.media_file);
-      }
+    mutationFn: (formData: FormData) => {
+      // Debug: Log FormData contents (for testing; remove in prod)
+      console.log('Sending FormData keys:', Array.from(formData.keys()));
+      console.log('Media file in FormData:', formData.get('media_file') ? 'Present' : 'Missing');
 
-      return api.post(`${EMERGENCY_BASE_URL}/`, formData, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }).then((res) => res.data);
+      return api
+        .post(`${EMERGENCY_BASE_URL}/`, formData, {
+          withCredentials: true,
+          headers: {
+            // Explicitly omit Content-Type to let browser set multipart/form-data with boundary
+            // If your api instance has default json headers, this overrides without setting Content-Type
+          },
+        })
+        .then((res) => {
+          console.log('API Response:', res.data); // Debug
+          return res.data;
+        });
     },
     onSuccess: () => {
       toast({ title: "Created", description: "Emergency report submitted." });
       queryClient.invalidateQueries({ queryKey: ["emergencies"] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Mutation error details:', error); // Enhanced logging
       toast({
         title: "Error",
         description: "Failed to submit emergency report.",

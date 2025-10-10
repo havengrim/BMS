@@ -56,11 +56,13 @@ const services = [
 
 export function Navbar() {
   const location = useLocation();
-  const { user } = useAuthStore();
   const navigate = useNavigate();
   const handleLogout = useLogout();
 
-const { data: emergencies } = useEmergencies();
+const { user } = useAuthStore();
+const isLoggedIn = !!user;
+
+const { data: emergencies } = useEmergencies(isLoggedIn);
 const emergencyList = Array.isArray(emergencies) ? emergencies : [];
 const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
 
