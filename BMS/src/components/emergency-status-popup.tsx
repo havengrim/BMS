@@ -122,7 +122,7 @@ const handleStatusChange = useCallback(
 useEffect(() => {
   const interval = setInterval(() => {
     queryClient.invalidateQueries({ queryKey: ['emergencies'] });
-  }, 5000);
+  }, 1000 * 60 * 5);
   return () => clearInterval(interval);
 }, [queryClient]);
 

@@ -129,6 +129,7 @@ export default function CertificatesPage() {
     complete_address: "",
     contact_number: "",
     email_address: "",
+    business_name: "",
     purpose: "",
     agree_terms: false,
   });
@@ -197,6 +198,9 @@ useEffect(() => {
       email_address: formData.email_address,
       purpose: formData.purpose,
       agree_terms: formData.agree_terms,
+        ...(selectedCertificate === "business-clearance" && {
+    business_name: formData.business_name, 
+  }),
     };
 
     try {
@@ -214,6 +218,7 @@ useEffect(() => {
         contact_number: "",
         email_address: "",
         purpose: "",
+        business_name: "",
         agree_terms: false,
       });
     } catch (err) {
@@ -362,6 +367,20 @@ useEffect(() => {
                             }
                           />
                         </div>
+                        {selectedCertificate === "business-clearance" && (
+                          <div>
+                            <Label htmlFor="business_name">Business Name *</Label>
+                            <Input
+                              id="business_name"
+                              placeholder="Enter your business name"
+                              value={(formData as any).business_name || ""}
+                              onChange={(e) =>
+                                setFormData({ ...formData, business_name: e.target.value })
+                              }
+                              required
+                            />
+                          </div>
+                        )}
                         <div>
                           <Label htmlFor="houseNum">House Number *</Label>
                           <Input

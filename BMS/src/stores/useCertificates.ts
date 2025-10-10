@@ -9,6 +9,7 @@ export type Status = "pending" | "approved" | "rejected" | "completed";
 export type Certificate = {
   user_age: number;
   user_birthdate:string;
+  business_name: string;
   id: number
   certificate_type: string
   request_number: string
@@ -39,6 +40,7 @@ export type CreateCertificateInput = {
 
 export type EditCertificateInput = {
   certificate_type: string
+  business_name: string
   first_name: string
   last_name: string
   middle_name?: string
@@ -98,7 +100,7 @@ export const useEditCertificate = () => {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: EditCertificateInput }) =>
-      api.put(`${CERTIFICATE_BASE_URL}/edit/${id}/`, data, { withCredentials: true }).then(res => res.data),
+      api.patch(`${CERTIFICATE_BASE_URL}/edit/${id}/`, data, { withCredentials: true }).then(res => res.data),
     onSuccess: () => {
       toast({ title: "Updated", description: "Certificate updated successfully." })
       queryClient.invalidateQueries({ queryKey: ["certificates"] })

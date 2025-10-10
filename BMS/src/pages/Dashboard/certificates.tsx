@@ -125,6 +125,7 @@ export default function Certificates() {
             certificate_type: editingCertificate.certificate_type,
             first_name: editingCertificate.first_name,
             last_name: editingCertificate.last_name,
+            business_name: editingCertificate.business_name,
             middle_name: editingCertificate.middle_name,
             complete_address: editingCertificate.complete_address,
             contact_number: editingCertificate.contact_number,
@@ -191,12 +192,14 @@ const generateCertificate = async (certificate: Certificate) => {
       case "Barangay Clearance":
         templateFile = "/templates/clearance.docx";
         break;
-      // Add other certificate types if needed
+      case "Business Clearance":
+        templateFile = "/templates/businessClearance.docx";
+        break;
       default:
         throw new Error("Unsupported certificate type");
     }
 
-    // Load the DOCX template
+    // Load DOCX template
     const response = await fetch(templateFile);
     if (!response.ok) throw new Error(`Failed to load template: ${response.status}`);
     const buffer = await response.arrayBuffer();
@@ -211,30 +214,40 @@ const generateCertificate = async (certificate: Certificate) => {
 
     const address = certificate.complete_address || "";
     const purpose = certificate.purpose || "";
+    const businessName = certificate.business_name || "";
     const userAge = certificate.user_age ? certificate.user_age.toString() : "";
     const birthdate = certificate.user_birthdate
       ? formatBirthdate(certificate.user_birthdate)
       : "N/A";
-    // Format today's date
-    const { day, month, year } = formatDate(new Date());
 
-    // Render template
+    // Format today's date (split and full format)
+    const today = new Date();
+    const { day, month, year } = formatDate(today);
+    const formattedDate = `${(today.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${today
+      .getDate()
+      .toString()
+      .padStart(2, "0")}/${today.getFullYear()}`; // e.g. 10/10/2025
+
+    // Render template with both date formats
     doc.render({
       name: fullName.toUpperCase(),
       address: address.toUpperCase(),
       purpose: purpose.toUpperCase(),
+      businessName: businessName.toUpperCase(),
       age: userAge,
-      birthday:birthdate,
+      birthday: birthdate,
       date: day,
       month,
       year,
+      formattedDate, // 🆕 You can use {{formattedDate}} in your DOCX template
     });
 
-    // Generate DOCX blob and save
+    // Generate and save DOCX file
     const out = doc.getZip().generate({
       type: "blob",
-      mimeType:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     });
 
     saveAs(out, `${certificate.request_number}_${certificate.certificate_type.replace(/\s+/g, "_")}.docx`);
@@ -248,6 +261,7 @@ const generateCertificate = async (certificate: Certificate) => {
     alert("Failed to generate certificate. Check console for details.");
   }
 };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -509,7 +523,8 @@ const generateCertificate = async (certificate: Certificate) => {
                                     {(
                                         certificate.certificate_type === "Certificate of Indigency" ||
                                         certificate.certificate_type === "Certificate of Residency" ||
-                                        certificate.certificate_type === "Barangay Clearance"
+                                        certificate.certificate_type === "Barangay Clearance" ||
+                                        certificate.certificate_type === "Business Clearance"
                                       ) && certificate.status === "completed" && (
                                         <Tooltip>
                                           <TooltipTrigger asChild>

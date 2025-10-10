@@ -15,6 +15,7 @@ class CertificateRequest(models.Model):
     email_address = models.EmailField()
     purpose = models.TextField()
     agree_terms = models.BooleanField(default=False)
+    business_name = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(
         max_length=20,
         choices=[
@@ -30,8 +31,13 @@ class CertificateRequest(models.Model):
     CERTIFICATE_PREFIXES = {
     "Certificate of Residency": "CR",
     "Certificate of Indigency": "CI",
-   
+    "Business Clearance": "BC",
         }
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.certificate_type == "Business Clearance" and not self.business_name:
+            raise ValidationError({"business_name": "Business name is required for Business Clearance."})
 
     def save(self, *args, **kwargs):
         if not self.request_number:

@@ -46,6 +46,11 @@ class CertificateRequestUpdateView(generics.UpdateAPIView):
         queryset = CertificateRequest.objects.all()
         logger.debug(f"Authenticated User: {self.request.user}, Full Queryset: {queryset.values('id', 'request_number')}")
         return queryset
+    
+    def patch(self, request, *args, **kwargs):
+        """Allow partial updates (e.g. updating only the status field)."""
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 class CertificateRequestDeleteView(generics.DestroyAPIView):
     serializer_class = CertificateRequestSerializer
