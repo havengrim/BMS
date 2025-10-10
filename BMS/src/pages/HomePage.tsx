@@ -3,29 +3,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Navbar } from "@/components/navbar"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
-  FileText,
-  Users,
-  MessageSquare,
-  Phone,
-  MapPin,
-  ArrowRight,
-  Award,
-  TrendingUp,
-  Heart,
-  Shield,
-  Mail,
-} from "lucide-react"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { FileText, Users, MessageSquare, Phone, MapPin, ArrowRight, Award, TrendingUp, Heart, Shield, Mail, Target, Eye, AlertTriangle } from 'lucide-react'
 import { AnnouncementGallery } from "@/components/announcement-gallery"
-import { announcements } from "@/lib/announcements-data"
 import images from "@/assets/images"
 import { Footer } from "@/components/footer"
+import { EmergencyModal } from "@/components/emergency-modal"
 
 const services = [
   {
@@ -136,7 +119,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
+      
       {/* Hero Section */}
       <section
         className="relative py-20 sm:py-24 text-white"
@@ -156,8 +139,9 @@ export default function HomePage() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight tracking-tight">
               Welcome to <span className="text-white/80">Sindalan Connect</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl mb-10 max-w-2xl mx-auto text-white/85">
-              Access barangay services with ease — request certificates, apply for permits, and stay informed in one place.
+            <p className="text-base sm:text-lg md:text-xl mb-6 max-w-2xl mx-auto text-white/85">
+              Access barangay services with ease — request certificates, apply for permits, and stay informed in one
+              place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
@@ -179,7 +163,6 @@ export default function HomePage() {
                 <Link to="/contact">Contact Us</Link>
               </Button>
             </div>
-
             {/* Quick Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-20 max-w-3xl mx-auto">
               <div className="text-center">
@@ -218,7 +201,9 @@ export default function HomePage() {
                     >
                       <service.icon className="h-6 w-6 text-white" />
                     </div>
-                    <CardTitle className="group-hover:text-primary transition-colors text-lg sm:text-xl">{service.title}</CardTitle>
+                    <CardTitle className="group-hover:text-primary transition-colors text-lg sm:text-xl">
+                      {service.title}
+                    </CardTitle>
                     <CardDescription className="text-sm sm:text-base">{service.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -245,7 +230,8 @@ export default function HomePage() {
               <Link to="/announcements">View All</Link>
             </Button>
           </div>
-          <AnnouncementGallery announcements={announcements.slice(0, 6)} />
+          {/* AnnouncementGallery fetches announcements internally */}
+          <AnnouncementGallery showAll={false} />
         </div>
       </section>
 
@@ -253,15 +239,16 @@ export default function HomePage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Left side - Image */}
-            <div className="relative">
+            {/* Left side - Image with overlay */}
+            <div className="relative rounded-lg shadow-lg w-full h-[500px] overflow-hidden">
               <img
-                src="https://i.pinimg.com/736x/c6/a5/93/c6a5935292ba497248c8a860b17e5fc9.jpg"
+                src={images.barangay || "/placeholder.svg"}
                 alt="Barangay officials working together"
-                className="rounded-lg shadow-lg w-full h-[400px] object-cover"
+                className="w-full h-full object-cover"
               />
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 pointer-events-none rounded-lg bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
             </div>
-
             {/* Right side - Content */}
             <div>
               <Badge variant="outline" className="mb-4 uppercase tracking-wide text-sm">
@@ -271,11 +258,12 @@ export default function HomePage() {
                 Building a stronger community through excellence
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground mb-8 leading-relaxed">
-                We are committed to serving our community with dedication and innovation. Our achievements reflect our continuous efforts to improve the lives of Sindalan residents through quality service delivery and community development.
+                We are committed to serving our community with dedication and innovation. Our achievements reflect our
+                continuous efforts to improve the lives of Sindalan residents through quality service delivery and
+                community development, aligned with our mission of creating sustainable growth through effective
+                governance.
               </p>
-
               <h3 className="text-xl font-semibold mb-6">Our Key Accomplishments</h3>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 {achievements.map((achievement, index) => (
                   <div key={index} className="flex items-start gap-3">
@@ -291,12 +279,11 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild className="w-full sm:w-auto">
                   <Link to="/about">Learn our approach</Link>
                 </Button>
-                <Button variant="outline" asChild className="w-full sm:w-auto">
+                <Button variant="outline" asChild className="w-full sm:w-auto bg-transparent">
                   <Link to="/achievements">View all achievements</Link>
                 </Button>
               </div>
@@ -305,8 +292,114 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Mission & Vision Section */}
+      <section className="py-16 bg-muted/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Our Mission & Vision</h2>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+              The guiding principles that drive our commitment to serve the Sindalan community
+            </p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto mb-12">
+            {/* Mission Card */}
+            <Card className="hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Target className="h-5 w-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl font-bold">Our Mission</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  "To create positive environment for sustainable growth through the practice of effective and efficient
+                  services and good local governance that will improve the community"
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Sustainable Growth
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Efficient Services
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Good Governance
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+            {/* Vision Card */}
+            <Card className="hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Eye className="h-5 w-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl font-bold">Our Vision</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  "Progress transparency and good governance in our community"
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Progress
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Transparency
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Community Focus
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          {/* Core Values */}
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h3 className="text-xl font-bold mb-2">Our Core Values</h3>
+              <p className="text-muted-foreground">The principles that guide our daily operations</p>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center p-4">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium text-sm mb-1">Integrity</h4>
+                <p className="text-xs text-muted-foreground">Honest and ethical service</p>
+              </div>
+              <div className="text-center p-4">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium text-sm mb-1">Service</h4>
+                <p className="text-xs text-muted-foreground">Dedicated to our community</p>
+              </div>
+              <div className="text-center p-4">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium text-sm mb-1">Excellence</h4>
+                <p className="text-xs text-muted-foreground">Highest quality standards</p>
+              </div>
+              <div className="text-center p-4">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Heart className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium text-sm mb-1">Compassion</h4>
+                <p className="text-xs text-muted-foreground">Caring for every resident</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Enhanced Contact/Help Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-white ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Need Help?</h2>
@@ -314,7 +407,6 @@ export default function HomePage() {
               We're here to assist you. Choose the best way to reach us.
             </p>
           </div>
-
           {/* Contact Methods */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {contactMethods.map((method, index) => (
@@ -341,7 +433,6 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
-
           {/* FAQ Section */}
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-8">
@@ -350,19 +441,18 @@ export default function HomePage() {
               </h3>
               <p className="text-muted-foreground max-w-md mx-auto">Quick answers to common questions</p>
             </div>
-           <Accordion type="single" collapsible className="w-full max-w-4xl mx-auto space-y-2">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm sm:text-base text-muted-foreground">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-
+            <Accordion type="single" collapsible className="w-full max-w-4xl mx-auto space-y-2">
+              {faqs.map((faq, index) => (
+                <AccordionItem key={index} value={`item-${index}`}>
+                  <AccordionTrigger className="text-left text-base sm:text-lg font-medium">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm sm:text-base text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
             <div className="text-center mt-8">
               <Button variant="outline" asChild>
                 <Link to="/faq">
@@ -371,8 +461,7 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-
-          {/* Emergency Contact */}
+          {/* Emergency Contact with Modal */}
           <div className="mt-16 max-w-7xl mx-auto">
             <Card className="border-red-200 bg-red-50">
               <CardHeader className="text-center">
@@ -385,11 +474,29 @@ export default function HomePage() {
                 </CardDescription>
                 <div className="text-2xl font-bold text-red-800 mt-2">0917-EMERGENCY (0917-363-7436)</div>
                 <div className="text-sm text-red-600 mt-2">Available 24/7 for emergencies only</div>
+                
+                {/* Emergency Report Button */}
+                <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button asChild className="bg-red-600 hover:bg-red-700">
+                    <a href="tel:0917-363-7436">
+                      <Phone className="h-4 w-4 mr-2" />
+                      Call Emergency Hotline
+                    </a>
+                  </Button>
+                  
+                  <EmergencyModal>
+                    <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Submit Emergency Report
+                    </Button>
+                  </EmergencyModal>
+                </div>
               </CardHeader>
             </Card>
           </div>
         </div>
       </section>
+
       <Footer />
     </div>
   )

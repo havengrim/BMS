@@ -17,6 +17,7 @@ import {
   ExternalLink,
 } from "lucide-react"
 import images from "@/assets/images"
+
 const quickLinks = [
   { name: "Certificate Requests", href: "/certificates", icon: FileText },
   { name: "Business Permits", href: "/business-permits", icon: Users },
@@ -56,9 +57,9 @@ const contactInfo = [
 
 export function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-300">
+    <footer className="bg-green-700 text-slate-100">
       {/* Main Footer Content */}
-      <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-1">
@@ -67,26 +68,25 @@ export function Footer() {
                 src={images.logo}
                 className="h-14 w-14 filter grayscale brightness-200"
               />
-
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-white">Sindalan Connect</span>
-                <span className="text-sm text-slate-400">Barangay Management System</span>
+                <span className="text-sm text-slate-200">Barangay Management System</span>
               </div>
             </div>
-            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+            <p className="text-sm text-slate-200 mb-6 leading-relaxed">
               Your digital gateway to barangay services. Connecting residents with efficient, accessible, and
               transparent government services.
             </p>
 
             {/* Social Media */}
             <div className="flex space-x-4">
-              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800">
+              <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
                 <Facebook className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800">
+              <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
                 <Globe className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800">
+              <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
                 <Mail className="h-5 w-5" />
               </Button>
             </div>
@@ -100,7 +100,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     to={link.href}
-                    className="flex items-center space-x-2 text-sm text-slate-400 hover:text-white transition-colors group"
+                    className="flex items-center space-x-2 text-sm text-slate-200 hover:text-white transition-colors group"
                   >
                     <link.icon className="h-4 w-4 group-hover:text-primary transition-colors" />
                     <span>{link.name}</span>
@@ -117,7 +117,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     to={link.href}
-                    className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1"
+                    className="text-sm text-slate-200 hover:text-white transition-colors flex items-center gap-1"
                   >
                     {link.name}
                     <ExternalLink className="h-3 w-3" />
@@ -139,7 +139,7 @@ export function Footer() {
                   <div>
                     <h4 className="text-sm font-medium text-white mb-1">{info.label}</h4>
                     {info.details.map((detail, idx) => (
-                      <p key={idx} className="text-sm text-slate-400">
+                      <p key={idx} className="text-sm text-slate-200">
                         {detail}
                       </p>
                     ))}
@@ -152,7 +152,7 @@ export function Footer() {
           {/* Newsletter & Emergency */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Stay Updated</h3>
-            <p className="text-sm text-slate-400 mb-4">
+            <p className="text-sm text-slate-200 mb-4">
               Subscribe to receive important announcements and updates from the barangay.
             </p>
 
@@ -160,9 +160,9 @@ export function Footer() {
               <Input
                 type="email"
                 placeholder="Enter your email"
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-primary"
+                className="bg-gray-50 border-slate-700 text-white placeholder:text-slate-500 focus:border-primary"
               />
-              <Button size="sm" className="px-4">
+              <Button size="sm" className="px-4 bg-green-900" >
                 Subscribe
               </Button>
             </div>
@@ -186,7 +186,7 @@ export function Footer() {
       <div className="border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6 text-sm text-slate-400">
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6 text-sm text-slate-200">
               <p>&copy; 2025 Barangay Sindalan. All rights reserved.</p>
               <div className="flex items-center space-x-4">
                 <Link to="/privacy" className="hover:text-white transition-colors">
@@ -203,13 +203,12 @@ export function Footer() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 text-sm text-slate-400">
+            <div className="flex items-center space-x-2 text-sm text-slate-200">
               <span>Made with</span>
               <Heart className="h-4 w-4 text-red-500" />
               <span>for the community</span>
             </div>
           </div>
-
         </div>
       </div>
     </footer>
