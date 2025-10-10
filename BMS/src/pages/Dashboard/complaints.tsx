@@ -102,7 +102,7 @@ const MapViewer = ({ latitude, longitude }: { latitude: number; longitude: numbe
 
     // Initialize map
     if (!mapRef.current) {
-      console.log("Map container not found");
+    
       return;
     }
 
@@ -118,7 +118,6 @@ const MapViewer = ({ latitude, longitude }: { latitude: number; longitude: numbe
         const lat = Number(latitude);
         const lng = Number(longitude);
 
-        console.log("Initializing map with coordinates:", { lat, lng, latitude, longitude });
 
         // Use fallback coordinates if invalid
         const validLat = !isNaN(lat) && lat >= -90 && lat <= 90 ? lat : 14.5995;
@@ -157,7 +156,7 @@ const MapViewer = ({ latitude, longitude }: { latitude: number; longitude: numbe
           }
         }, 100);
 
-        console.log("Map initialized successfully at:", { lat: validLat, lng: validLng });
+        
       } catch (err) {
         console.error("Map initialization error:", err);
         setMapError("Failed to load map. Please try again.");
@@ -173,7 +172,7 @@ const MapViewer = ({ latitude, longitude }: { latitude: number; longitude: numbe
         try {
           mapInstanceRef.current.off();
           mapInstanceRef.current.remove();
-          console.log("Map cleaned up");
+         
         } catch (error) {
           console.warn("Error during map cleanup:", error);
         }

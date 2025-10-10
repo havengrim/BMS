@@ -57,7 +57,7 @@ export const useAuthStore = create<AuthState>()(
      refreshAccessToken: async () => {
   try {
     set({ loading: true });
-    console.log("[AuthStore] Attempting token refresh...");
+   
 
     // Empty body: Backend reads HttpOnly refresh cookie
     const res = await api.post("/api/token/refresh/", {}, { withCredentials: true });
@@ -71,11 +71,11 @@ export const useAuthStore = create<AuthState>()(
     // Refetch user with new access (middleware/cookie handles auth)
     const userRes = await api.get("/api/auth/user/", { withCredentials: true });
     set({ user: userRes.data });
-    console.log("[AuthStore] Token refresh successful, new access:", newAccessToken.substring(0, 20) + "...");
+    
   } catch (err: unknown) {
     console.error("[AuthStore] Token refresh failed:", err);
     if (err instanceof Error) {
-      console.error("Error details:", err.message);
+    
       // Don't auto-logout here—let interceptor decide (avoids double-logout)
       // get().logout();
       throw err;  // Re-throw for interceptor to handle

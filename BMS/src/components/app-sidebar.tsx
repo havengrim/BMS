@@ -120,8 +120,7 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const BASE_URL = import.meta.env.VITE_API_URL;
    const user = useAuthStore((state) => state.user);
-   console.log(user)
-
+ 
     const userData = {
     name: user?.profile?.name || user?.username || "Unknown User",
     email: user?.email || "no-email@example.com",
@@ -129,7 +128,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ? `${BASE_URL}${user.profile.image}`
     : "https://github.com/leerob.png",
   }
-  console.log("User image:", user?.profile?.image);
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>

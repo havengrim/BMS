@@ -14,7 +14,7 @@ export const useUsers = () => {
 
 // ✅ Fetch single user by ID
 export const useUser = (id: number) => {
-  console.log('Fetching user with id:', id);
+  
   return useQuery<User, Error>({
     queryKey: ['user', id],
     queryFn: () => api.get(`/api/users/${id}/`).then(res => res.data),
