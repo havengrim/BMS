@@ -44,33 +44,37 @@ export const useAuthStore = create<AuthState>()(
       },
 
         refreshToken: async () => {
-        try {
-          set({ loading: true });
-          console.log("[AuthStore] Attempting token refresh...");
+          try {
+            set({ loading: true });
+            console.log("[AuthStore] Attempting token refresh...");
 
-          // If backend reads refresh token from HttpOnly cookie, no body is needed
-          const res = await apiClient.post("/api/token/refresh/", {}, { withCredentials: true });
+            const refreshTokenValue = Cookies.get("refresh_token"); // <-- get refresh token
+            if (!refreshTokenValue) throw new Error("No refresh token available");
 
-          const accessToken = res.data?.access;
-          if (!accessToken) throw new Error("No access token returned from refresh");
+            const res = await apiClient.post("/api/token/refresh/", {
+              refresh: refreshTokenValue, // <-- send it in request body
+            });
 
-          // Store access token in cookie
-          Cookies.set("access_token", accessToken, { expires: 1 / 24, secure: true, sameSite: "Lax" });
-          set({ token: accessToken });
-          console.log("[AuthStore] Access token updated:", accessToken);
+            const accessToken = res.data?.access;
+            if (!accessToken) throw new Error("No access token returned from refresh");
 
-          // Fetch user data using new access token
-          const userRes = await apiClient.get("/api/auth/user/", {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          set({ user: userRes.data });
-          console.log("[AuthStore] User data refreshed:", userRes.data);
-        } catch (err) {
-          console.error("[AuthStore] Token refresh failed:", err);
-          get().logout();
-        } finally {
-          set({ loading: false });
-        }
+            // Store access token in cookie
+            Cookies.set("access_token", accessToken, { expires: 1 / 24, secure: true, sameSite: "Lax" });
+            set({ token: accessToken });
+            console.log("[AuthStore] Access token updated:", accessToken);
+
+            // Fetch user data using new access token
+            const userRes = await apiClient.get("/api/auth/user/", {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            set({ user: userRes.data });
+            console.log("[AuthStore] User data refreshed:", userRes.data);
+          } catch (err) {
+            console.error("[AuthStore] Token refresh failed:", err);
+            get().logout();
+          } finally {
+            set({ loading: false });
+          }
       },
     }),
     {
