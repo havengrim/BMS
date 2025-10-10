@@ -41,7 +41,7 @@ export default function SettingsPage() {
   // Hooks
   const userId = useAuthStore((state) => {
     const id = state.user?.id;
-    console.log("userId from useAuthStore:", id);
+    
     return id;
   });
   const { data: userData, isLoading, error } = useUser(userId!);
@@ -172,7 +172,7 @@ export default function SettingsPage() {
         return;
       }
       setImageFile(file);
-      console.log("Selected file:", { name: file.name, type: file.type, size: file.size });
+     
     }
   };
 

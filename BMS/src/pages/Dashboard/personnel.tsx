@@ -95,7 +95,7 @@ const PersonnelForm = React.memo(
     fileInputRef: React.RefObject<HTMLInputElement | null>
     nameInputRef: React.RefObject<HTMLInputElement | null>
   }) => {
-    console.log("PersonnelForm rendered")
+    
     return (
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-4 items-center gap-4">
