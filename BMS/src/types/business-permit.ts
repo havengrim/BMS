@@ -31,6 +31,7 @@ export type CreateBusinessPermitInput = {
 };
 
 export type EditBusinessPermitInput = {
+  id:number;
   business_name: string;
   business_type: string;
   owner_name: string;
