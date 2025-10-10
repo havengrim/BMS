@@ -59,11 +59,12 @@ export type User = {
   profile: UserProfile;
 };
 
+
 export const useLogin = () => {
-  const setUser = useAuthStore((s: any) => s.setUser);
-  const setTokens = useAuthStore((s: any) => s.setTokens);  // New: Store access
-  const setLoading = useAuthStore((s: any) => s.setLoading);
-  const clearAuth = useAuthStore((s: any) => s.clearAuth);
+  const setUser = useAuthStore((s) => s.setUser);
+  const setTokens = useAuthStore((s) => s.setTokens);
+  const setLoading = useAuthStore((s) => s.setLoading);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -71,21 +72,16 @@ export const useLogin = () => {
     mutationFn: (data) =>
       api.post('/api/token/', data, { withCredentials: true }).then((res) => res.data),
 
-    onSuccess: async (loginData) => {  // loginData now available
+    onSuccess: async (loginData) => {
       setLoading(true);
       try {
-        // Key fix: Store access token from login response
-        if (loginData.access) {
-          setTokens(loginData.access);
-        } else {
-          throw new Error("Access token missing from login response");
-        }
+        if (!loginData.access) throw new Error("Access token missing from login response");
 
-        // Fetch fresh user (optional now, since loginData.user exists; but keep for profile updates)
-        const res = await api.get('/api/auth/user/', { withCredentials: true });
-        const user = res.data;
+        // Store access token in Zustand + cookie
+        setTokens(loginData.access, loginData.refresh);
 
-        setUser(user);  // Or use loginData.user if preferred
+        // Use loginData.user directly (already returned from login)
+        setUser(loginData.user);
 
         toast({
           title: 'Login Successful',
@@ -93,8 +89,8 @@ export const useLogin = () => {
           variant: 'success',
         });
 
-        const role = user.profile?.role?.toLowerCase();
-
+        // Navigate based on role
+        const role = loginData.user.profile?.role?.toLowerCase();
         if (role === 'resident' || role === 'user') {
           navigate('/');
         } else {
@@ -104,7 +100,7 @@ export const useLogin = () => {
         clearAuth();
         toast({
           title: 'Login Failed',
-          description: 'Could not fetch authenticated user.',
+          description: err.message || 'Could not fetch authenticated user.',
           variant: 'destructive',
         });
       } finally {

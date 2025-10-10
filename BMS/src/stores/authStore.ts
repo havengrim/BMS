@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
-import { api as apiClient } from "@/lib/api"; // Axios instance
+import { api } from "@/lib/api"; // Axios instance
 import type { User } from "@/types/auth";
 
 type AuthState = {
@@ -54,43 +54,32 @@ export const useAuthStore = create<AuthState>()(
         get().clearAuth();
       },
 
-      refreshAccessToken: async () => {
+     refreshAccessToken: async () => {
   try {
     set({ loading: true });
     console.log("[AuthStore] Attempting token refresh...");
 
-    // Get refresh token from store or cookie (fallback)
-    const currentRefresh = get().refreshToken || Cookies.get("refresh_token");
-    if (!currentRefresh) {
-      throw new Error("No refresh token available");
-    }
-
-    // Send refresh token in body (as per SimpleJWT)
-    const res = await apiClient.post("/api/token/refresh/", { 
-      refresh: currentRefresh 
-    });
+    // Empty body: Backend reads HttpOnly refresh cookie
+    const res = await api.post("/api/token/refresh/", {}, { withCredentials: true });
     
     const newAccessToken = res.data?.access;
-    if (!newAccessToken) throw new Error("No access token returned");
+    if (!newAccessToken) throw new Error("No access token returned from refresh");
 
-    // Update tokens (backend may return new refresh too)
-    get().setTokens(newAccessToken, res.data?.refresh || undefined);
+    // Update store (access only; refresh stays HttpOnly)
+    get().setTokens(newAccessToken);
 
-    // Fetch user with new token
-    const userRes = await apiClient.get("/api/auth/user/", {
-      headers: { Authorization: `Bearer ${newAccessToken}` },
-    });
+    // Refetch user with new access (middleware/cookie handles auth)
+    const userRes = await api.get("/api/auth/user/", { withCredentials: true });
     set({ user: userRes.data });
-    console.log("[AuthStore] Token refresh successful, user data updated:", userRes.data);
+    console.log("[AuthStore] Token refresh successful, new access:", newAccessToken.substring(0, 20) + "...");
   } catch (err: unknown) {
-    // TS-safe error handling
     console.error("[AuthStore] Token refresh failed:", err);
     if (err instanceof Error) {
       console.error("Error details:", err.message);
-      // Optional: Log response if AxiosError
-      // if (isAxiosError(err)) { console.error(err.response?.data); }
+      // Don't auto-logout here—let interceptor decide (avoids double-logout)
+      // get().logout();
+      throw err;  // Re-throw for interceptor to handle
     }
-    get().logout();
   } finally {
     set({ loading: false });
   }
