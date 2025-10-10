@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useAuthStore } from '@/stores/authStore'; // adjust if path is different
+import { useAuthStore } from '@/stores/authStore'; // Adjust path if needed
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -22,18 +22,17 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Call refresh token endpoint — refresh token is in HttpOnly cookie
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/token/refresh/`,
-          {},
-          { withCredentials: true }
-        );
+  
+        const authStore = useAuthStore.getState();
+        await authStore.refreshAccessToken();
 
-        // Retry original request after refreshing the token
         return api(originalRequest);
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-        useAuthStore.getState().logout(); // Optional: reset store or redirect to login
+      } catch (refreshError: any) {
+        console.error('Token refresh failed:', refreshError?.response?.data || refreshError.message);
+        
+        // Logout on failure (clears store/cookies)
+        useAuthStore.getState().logout();
+
       }
     }
 

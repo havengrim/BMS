@@ -61,6 +61,7 @@ export type User = {
 
 export const useLogin = () => {
   const setUser = useAuthStore((s: any) => s.setUser);
+  const setTokens = useAuthStore((s: any) => s.setTokens);  // New: Store access
   const setLoading = useAuthStore((s: any) => s.setLoading);
   const clearAuth = useAuthStore((s: any) => s.clearAuth);
   const { toast } = useToast();
@@ -70,13 +71,21 @@ export const useLogin = () => {
     mutationFn: (data) =>
       api.post('/api/token/', data, { withCredentials: true }).then((res) => res.data),
 
-    onSuccess: async () => {
+    onSuccess: async (loginData) => {  // loginData now available
       setLoading(true);
       try {
+        // Key fix: Store access token from login response
+        if (loginData.access) {
+          setTokens(loginData.access);
+        } else {
+          throw new Error("Access token missing from login response");
+        }
+
+        // Fetch fresh user (optional now, since loginData.user exists; but keep for profile updates)
         const res = await api.get('/api/auth/user/', { withCredentials: true });
         const user = res.data;
 
-        setUser(user);
+        setUser(user);  // Or use loginData.user if preferred
 
         toast({
           title: 'Login Successful',
