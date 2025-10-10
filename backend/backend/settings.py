@@ -28,8 +28,14 @@ SECRET_KEY = 'django-insecure-&9271$5$im%^9n1_t2+58q#l=r4m+r&$616rbep2$kidk*@90z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []
 
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    '7x4sjuavwb.execute-api.ap-southeast-1.amazonaws.com',
+    '.execute-api.ap-southeast-1.amazonaws.com',
+]
 
 # Application definition
 
@@ -131,7 +137,7 @@ DATABASES = {
     'default': dj_database_url.parse(
         config('DATABASE_URL'),
         conn_max_age=600,
-        ssl_require=True  # 🔐 Supabase requires SSL
+        ssl_require=True 
     )
 }
 
