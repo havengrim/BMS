@@ -75,8 +75,6 @@ export function AnnouncementGallery({ showAll = false }: AnnouncementGalleryProp
                     <img
                       src={
                         announcement.image
-                          ? `${import.meta.env.VITE_API_URL}${announcement.image}`
-                          : "/placeholder.svg"
                       }
                       alt={announcement.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

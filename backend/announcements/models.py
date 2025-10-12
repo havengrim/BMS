@@ -1,4 +1,7 @@
 from django.db import models
+from emergency.storages import SupabaseStorage
+
+supabase_storage = SupabaseStorage()
 
 class Announcement(models.Model):
     title = models.CharField(max_length=255)
@@ -8,7 +11,7 @@ class Announcement(models.Model):
     end_date = models.DateField()
     location = models.CharField(max_length=255)
     target_audience = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='announcements/', null=True, blank=True)
+    image = models.ImageField(storage=supabase_storage,upload_to='announcements/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
