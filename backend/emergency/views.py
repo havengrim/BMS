@@ -1,4 +1,3 @@
-# views.py
 from rest_framework import viewsets, permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import EmergencyReport
@@ -6,8 +5,7 @@ from .serializers import EmergencyReportSerializer, EmergencyReportPublicSeriali
 
 class EmergencyReportViewSet(viewsets.ModelViewSet):
     queryset = EmergencyReport.objects.all().order_by('-submitted_at')
-    serializer_class = EmergencyReportSerializer
-    parser_classes = (MultiPartParser, FormParser)  # Added: Essential for handling file uploads in multipart/form-data
+    parser_classes = (MultiPartParser, FormParser)  # required for file uploads
 
     def get_permissions(self):
         if self.action == 'create':
@@ -15,6 +13,8 @@ class EmergencyReportViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def get_serializer_class(self):
+        if self.action == "create":
+            return EmergencyReportSerializer  # ensure FileField is used
         user = self.request.user
         if user.is_authenticated and getattr(user, 'role', None) == "resident":
             return EmergencyReportSerializer
