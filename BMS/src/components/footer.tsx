@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
   Phone,
@@ -64,10 +63,7 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <img
-                src={images.logo}
-                className="h-14 w-14 filter grayscale brightness-200"
-              />
+              <img src={images.logo || "/placeholder.svg"} className="h-14 w-14 filter grayscale brightness-200" />
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-white">Sindalan Connect</span>
                 <span className="text-sm text-slate-200">Barangay Management System</span>
@@ -151,23 +147,6 @@ export function Footer() {
 
           {/* Newsletter & Emergency */}
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Stay Updated</h3>
-            <p className="text-sm text-slate-200 mb-4">
-              Subscribe to receive important announcements and updates from the barangay.
-            </p>
-
-            <div className="flex space-x-2 mb-6">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="bg-gray-50 border-slate-700 text-white placeholder:text-slate-500 focus:border-primary"
-              />
-              <Button size="sm" className="px-4 bg-green-900" >
-                Subscribe
-              </Button>
-            </div>
-
-            <Separator className="my-6 bg-slate-700" />
 
             {/* Emergency Contact */}
             <div className="bg-red-900/20 border border-red-800/30 rounded-lg p-4">

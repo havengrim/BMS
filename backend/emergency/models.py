@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
+from .storages import SupabaseStorage
 
+supabase_storage = SupabaseStorage()
 class EmergencyReport(models.Model):
     INCIDENT_TYPES = [
         ('fire', 'Fire'),
@@ -26,7 +28,7 @@ class EmergencyReport(models.Model):
     alert_message = models.TextField(default="🚨 Emergency reported. Stay alert.")
 
     # Optional media upload, can be image/audio/video
-    media_file = models.FileField(upload_to='emergency_media/', null=False, blank=False)
+    media_file = models.FileField(storage=supabase_storage, upload_to='emergency_media/')
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
