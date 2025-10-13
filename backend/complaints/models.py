@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from emergency.storages import SupabaseStorage
 
+supabase_storage = SupabaseStorage()
 class Complaint(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='complaints', null=True)
     type = models.CharField(max_length=100)
@@ -19,7 +21,7 @@ class Complaint(models.Model):
     status = models.CharField(max_length=50, default='pending')
     priority = models.CharField(max_length=50, default='medium')
     reference_number = models.CharField(max_length=50, unique=True, blank=True)
-    evidence = models.FileField(upload_to='complaint_evidence/', null=True, blank=True)
+    evidence = models.FileField(storage=supabase_storage,upload_to='complaint_evidence/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.subject} by {self.fullname}"
@@ -29,5 +31,5 @@ class Complaint(models.Model):
         if is_new:
             super().save(*args, **kwargs)  # Save first to get an ID
             self.reference_number = f"CM-{timezone.now().year}-{str(self.id).zfill(6)}"
-            return super().save(update_fields=['reference_number'])  # Only update the ref num
+            return super().save(update_fields=['reference_number']) 
         return super().save(*args, **kwargs)

@@ -170,13 +170,9 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
                     {/* Desktop Avatar */}
                     <Avatar className="cursor-pointer h-8 w-8 hidden md:flex">
                       <AvatarImage
-                        src={
-                          user?.profile?.image
-                            ? `${import.meta.env.VITE_API_URL}${user.profile.image}`
-                            : undefined
-                        }
-                        alt={user?.username}
-                      />
+                          src={user?.profile?.image ?? undefined}
+                          alt={user?.username}
+                        />
                       <AvatarFallback className="font-semibold">
                         {user.username.charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -229,18 +225,15 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
                   {isResidentOrUser && (
                     <div className="flex items-center gap-3 p-4 border-b">
                       <div className="relative">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage
-                            src={
-                              user?.profile?.image
-                                ? `${import.meta.env.VITE_API_URL}${user.profile.image}`
-                                : undefined
-                            }
-                          />
-                          <AvatarFallback className="font-semibold">
-                            {user.username.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                           <Avatar className="h-12 w-12">
+                      <AvatarImage
+                          src={user?.profile?.image ?? undefined}
+                          alt={user?.username}
+                        />
+                      <AvatarFallback className="font-semibold">
+                        {user.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
 
                         {hasInProgress && (
                           <span className="absolute -top-0.5 -right-[-1px] h-3 w-3 rounded-full bg-red-500 ring-1 ring-white animate-pulse"></span>

@@ -29,11 +29,7 @@ export function AnnouncementDialog({ announcement, open, onOpenChange }: Announc
           {/* Image */}
           <div className="relative w-full h-64 rounded-lg overflow-hidden">
             <img
-              src={
-                announcement.image
-                  ? `${import.meta.env.VITE_API_URL}${announcement.image}`
-                  : "/placeholder.svg"
-              }
+              src={announcement.image}
               alt={announcement.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />

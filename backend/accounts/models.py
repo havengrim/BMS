@@ -1,6 +1,9 @@
 from datetime import timezone
 from django.contrib.auth.models import User
 from django.db import models
+from emergency.storages import SupabaseStorage
+
+supabase_storage = SupabaseStorage()
 
 class Profile(models.Model):
     ROLE_CHOICES = [
@@ -17,7 +20,7 @@ class Profile(models.Model):
     address = models.CharField(max_length=255)
     civil_status = models.CharField(max_length=100)
     birthdate = models.DateField()
-    image = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    image = models.ImageField(storage=supabase_storage,upload_to='profile_pics/', blank=True, null=True)
     email = models.EmailField(max_length=254, blank=True, null=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 

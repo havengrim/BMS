@@ -118,16 +118,13 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const BASE_URL = import.meta.env.VITE_API_URL;
    const user = useAuthStore((state) => state.user);
  
     const userData = {
     name: user?.profile?.name || user?.username || "Unknown User",
     email: user?.email || "no-email@example.com",
-    image: user?.profile?.image
-    ? `${BASE_URL}${user.profile.image}`
-    : "https://github.com/leerob.png",
-  }
+    image: user?.profile?.image || "https://github.com/leerob.png", // <-- just use the image directly
+  };
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

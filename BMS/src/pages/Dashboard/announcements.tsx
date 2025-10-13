@@ -459,9 +459,7 @@ export default function AnnouncementsPage() {
                                   <Avatar className="h-12 w-12 rounded-md">
                                     <AvatarImage
                                       src={
-                                        announcement.image
-                                          ? `${import.meta.env.VITE_API_URL}${announcement.image}`
-                                          : "/placeholder.svg"
+                                        announcement.image 
                                       }
                                       alt={announcement.title}
                                       className="object-cover"
@@ -610,8 +608,6 @@ export default function AnnouncementsPage() {
                           <img
                             src={
                               selectedAnnouncement.image
-                                ? `${import.meta.env.VITE_API_URL}${selectedAnnouncement.image}`
-                                : "/placeholder.svg"
                             }
                             alt={selectedAnnouncement.title}
                             className="w-full h-full object-cover"
