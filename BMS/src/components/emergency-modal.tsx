@@ -449,7 +449,7 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800">
             <strong>For immediate life-threatening emergencies:</strong> Call 911
-            or our 24/7 emergency hotline: 0917-EMERGENCY (0917-363-7436)
+            or our 24/7 emergency hotline: (09694735789)
           </AlertDescription>
         </Alert>
 

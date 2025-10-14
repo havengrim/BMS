@@ -362,7 +362,7 @@ export default function ContactPage() {
               <CardContent className="space-y-3 pt-4 px-4 sm:px-6">
                 <Button variant="destructive" className="w-full shadow-sm" size="sm">
                   <Phone className="h-4 w-4 mr-2" />
-                  0918-765-4321
+                  09694735789
                 </Button>
                 <Button
                   variant="outline"

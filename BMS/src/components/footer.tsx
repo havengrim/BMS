@@ -32,7 +32,7 @@ const contactInfo = [
   {
     icon: Mail,
     label: "Email",
-    details: ["info@.gov.ph"],
+    details: ["sindalanbarangay@yahoo.com"],
   },
   {
     icon: MapPin,
