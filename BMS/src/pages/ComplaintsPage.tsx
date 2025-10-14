@@ -691,7 +691,7 @@ export default function ComplaintsPage() {
                                   maxLength={13} // to handle +639xxxxxxxxx
                                   value={formData.contact_number}
                                   onChange={handlePhoneChange}
-                                  placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                                  placeholder="09XXXXXXXXX or 9XXXXXXXXX"
                                   required
                                 />
                                 {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}

@@ -203,7 +203,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<"div"
                     maxLength={13}
                     value={form.contact_number}
                     onChange={handlePhoneChange}
-                    placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+                    placeholder="09XXXXXXXXX or 9XXXXXXXXX"
                     required
                   />
                   {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}

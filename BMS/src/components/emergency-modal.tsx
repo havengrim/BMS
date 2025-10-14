@@ -25,6 +25,7 @@ import { AlertTriangle, Upload, X, MapPin, Navigation } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateEmergency } from "@/stores/useEmergency"; // Import the hook
+import { validatePhilippinePhone } from "@/stores/validatePhone";
 
 interface EmergencyModalProps {
   children: React.ReactNode;
@@ -283,6 +284,9 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
     longitude: 0,
   });
 
+  // Phone validation state
+  const [phoneError, setPhoneError] = useState("");
+
   const handleInputChange = useCallback((field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
@@ -294,6 +298,18 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
   const handleLocationSelect = useCallback((lat: number, lng: number) => {
     handleInputChange("latitude", parseFloat(lat.toFixed(6)));
     handleInputChange("longitude", parseFloat(lng.toFixed(6)));
+  }, [handleInputChange]);
+
+  // Handle phone change with validation
+  const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+    handleInputChange("phone_number", value);
+
+    if (value.length > 0 && !validatePhilippinePhone(value)) {
+      setPhoneError("Invalid Phone Number");
+    } else {
+      setPhoneError("");
+    }
   }, [handleInputChange]);
 
   const currentPosition: MapPosition | null = formData.latitude !== 0 && formData.longitude !== 0
@@ -330,6 +346,17 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Re-validate phone before submit
+    const phoneValue = formData.phone_number.replace(/\D/g, "");
+    if (formData.phone_number && !validatePhilippinePhone(phoneValue)) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid Philippine phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Debug: Log full formData before submit
     console.log('Submitting formData:', formData);
     if (formData.media_file) {
@@ -348,7 +375,7 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
     submissionData.append("location_text", formData.location_text);
     submissionData.append("latitude", formData.latitude.toString());
     submissionData.append("longitude", formData.longitude.toString());
-    submissionData.append("phone_number", formData.phone_number);
+    submissionData.append("phone_number", phoneValue); // Use cleaned phone
     if (formData.media_file instanceof File) { // Defensive: only append if valid File
       submissionData.append("media_file", formData.media_file);
       console.log('Appended media_file to FormData'); // Debug
@@ -374,6 +401,7 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
           latitude: 0,
           longitude: 0,
         });
+        setPhoneError(""); // Clear error
         setOpen(false);
         toast({
           title: "Emergency reported",
@@ -397,6 +425,7 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
     formData.description &&
     formData.location_text &&
     formData.phone_number &&
+    !phoneError && // Add phone validation check
     formData.latitude !== 0 &&
     formData.longitude !== 0 &&
     formData.media_file instanceof File; // Changed: explicit File check
@@ -440,14 +469,19 @@ export function EmergencyModal({ children }: EmergencyModalProps) {
 
             <div className="space-y-2">
               <Label htmlFor="phone_number">Phone Number *</Label>
-              <Input
-                id="phone_number"
-                type="tel"
-                value={formData.phone_number}
-                onChange={(e) => handleInputChange("phone_number", e.target.value)}
-                placeholder="e.g., 09171234567"
-                required
-              />
+              <div className="flex flex-col space-y-1">
+                <Input
+                  id="phone_number"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={13}
+                  value={formData.phone_number}
+                  onChange={handlePhoneChange}
+                  placeholder="09XXXXXXXXX or 9XXXXXXXXX"
+                  required
+                />
+                {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}
+              </div>
             </div>
           </div>
 

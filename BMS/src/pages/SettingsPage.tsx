@@ -22,6 +22,9 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { validatePhilippinePhone } from "@/stores/validatePhone";
+import addresses from "@/data/addresses.json";
+
 interface UserProfile {
   id: number;
   username: string;
@@ -58,6 +61,12 @@ export default function SettingsPage() {
   // Use userData directly, with fallback for initial state
   const [formData, setFormData] = useState<UserProfile | null>(null);
 
+  // Phone validation state
+  const [phoneError, setPhoneError] = useState("");
+
+  // Address list state
+  const [addressList, setAddressList] = useState<string[]>([]);
+
   // Redirect to login if userId is undefined
   useEffect(() => {
     if (userId === undefined) {
@@ -69,6 +78,11 @@ export default function SettingsPage() {
       navigate("/login");
     }
   }, [userId, navigate, toast]);
+
+  // Load addresses
+  useEffect(() => {
+    setAddressList(addresses);
+  }, []);
 
   // Sync formData with userData
   useEffect(() => {
@@ -82,6 +96,7 @@ export default function SettingsPage() {
         role: "",
         image: null,
       };
+      const normalizedAddress = userData.profile.address?.trim() || "";
       setFormData({
         id: userData.id,
         username: userData.username,
@@ -89,11 +104,12 @@ export default function SettingsPage() {
         profile: {
           ...defaultProfile,
           ...userData.profile,
+          address: normalizedAddress,
         },
       });
       setSelectedDate(userData.profile?.birthdate ? new Date(userData.profile.birthdate) : undefined);
     }
-  }, [userData]);
+  }, [userData, addressList]);
 
   // Cleanup image URL
   useEffect(() => {
@@ -122,6 +138,18 @@ export default function SettingsPage() {
       </div>
     );
   }
+
+  // Handle phone change with validation
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ""); // remove non-digit characters
+    handleInputChange("contact_number", value, true);
+
+    if (value.length > 0 && !validatePhilippinePhone(value)) {
+      setPhoneError("Invalid Phone Number");
+    } else {
+      setPhoneError("");
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (field: string, value: string, isProfile = false) => {
@@ -186,11 +214,20 @@ export default function SettingsPage() {
       return;
     }
 
-    // Basic validation
+    // Basic validation including phone
     if (!formData.username || !formData.email || !formData.profile.name) {
       toast({
         title: "Validation Error",
         description: "Username, email, and full name are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.profile.contact_number && !validatePhilippinePhone(formData.profile.contact_number)) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid Philippine phone number.",
         variant: "destructive",
       });
       return;
@@ -201,7 +238,7 @@ export default function SettingsPage() {
     data.append("email", formData.email);
     data.append("profile.name", formData.profile.name);
     data.append("profile.contact_number", formData.profile.contact_number);
-    data.append("profile.address", formData.profile.address);
+    data.append("profile.address", formData.profile.address.trim());
     data.append("profile.civil_status", formData.profile.civil_status);
     data.append("profile.birthdate", formData.profile.birthdate);
     data.append("profile.role", formData.profile.role);
@@ -641,20 +678,38 @@ export default function SettingsPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="contact">Contact Number</Label>
-                      <Input
-                        id="contact"
-                        value={formData?.profile.contact_number ?? ""}
-                        onChange={(e) => handleInputChange("contact_number", e.target.value, true)}
-                      />
+                      <div className="flex flex-col space-y-1">
+                        <Input
+                          id="contact"
+                          type="tel"
+                          inputMode="numeric"
+                          maxLength={13}
+                          value={formData?.profile.contact_number ?? ""}
+                          onChange={handlePhoneChange}
+                          placeholder="09XXXXXXXXX or 9XXXXXXXXX"
+                        />
+                        {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}
+                      </div>
                     </div>
+                    
                   </div>
-                  <div className="space-y-2">
+                  <div className="grid gap-2">
                     <Label htmlFor="address">Address</Label>
-                    <Input
-                      id="address"
+                    <Select
                       value={formData?.profile.address ?? ""}
-                      onChange={(e) => handleInputChange("address", e.target.value, true)}
-                    />
+                      onValueChange={(value) => handleInputChange("address", value, true)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select address" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {addressList.map((addr, i) => (
+                          <SelectItem key={i} value={addr}>
+                            {addr}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2 w-full">
