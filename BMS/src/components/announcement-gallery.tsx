@@ -54,6 +54,7 @@ export function AnnouncementGallery({ showAll = false }: AnnouncementGalleryProp
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {announcements
           .filter((announcement) => announcement.status === "published")
+          .slice(0, 6)
           .map((announcement, index) => {
             const isLarge = !showAll && index === 0
             const isMedium = !showAll && (index === 1 || index === 2)
@@ -143,8 +144,6 @@ export function AnnouncementGallery({ showAll = false }: AnnouncementGalleryProp
                       <img
                         src={
                           announcement.image
-                            ? `${import.meta.env.VITE_API_URL}${announcement.image}`
-                            : "/placeholder.svg"
                         }
                         alt={announcement.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

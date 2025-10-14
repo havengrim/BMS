@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Eye, EyeOff } from "lucide-react";
 import images from "@/assets/images";
 import { useRegister } from "@/stores/useAccount";
 import Spinner from "@/components/ui/spinner";
@@ -48,6 +49,8 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<"div"
     civil_status: "",
     birthdate: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const registerMutation = useRegister();
   const { mutate: register, status } = registerMutation;
@@ -142,27 +145,51 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<"div"
               {/* Password */}
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={handleChange}
+                    required
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full p-0 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
 
               {/* Confirm Password */}
               <div className="grid gap-2">
                 <Label htmlFor="confirm_password">Confirm Password</Label>
-                <Input
-                  id="confirm_password"
-                  name="confirm_password"
-                  type="password"
-                  value={form.confirm_password}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="confirm_password"
+                    name="confirm_password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={form.confirm_password}
+                    onChange={handleChange}
+                    required
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full p-0 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
 
               {/* Contact Number */}

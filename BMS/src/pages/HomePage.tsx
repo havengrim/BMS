@@ -9,6 +9,7 @@ import { AnnouncementGallery } from "@/components/announcement-gallery"
 import images from "@/assets/images"
 import { Footer } from "@/components/footer"
 import { EmergencyModal } from "@/components/emergency-modal"
+import { useAuthStore } from "@/stores/authStore"
 
 const services = [
   {
@@ -116,6 +117,9 @@ const faqs = [
 ]
 
 export default function HomePage() {
+  const { user } = useAuthStore();
+  const isResident = user?.profile?.role === "resident";
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -193,25 +197,49 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {services.map((service) => (
-              <Card key={service.href} className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
-                <Link to={service.href}>
-                  <CardHeader>
-                    <div
-                      className={`w-12 h-12 rounded-lg ${service.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
-                    >
-                      <service.icon className="h-6 w-6 text-white" />
-                    </div>
-                    <CardTitle className="group-hover:text-primary transition-colors text-lg sm:text-xl">
-                      {service.title}
-                    </CardTitle>
-                    <CardDescription className="text-sm sm:text-base">{service.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center text-primary font-medium group-hover:gap-2 transition-all text-sm sm:text-base">
-                      Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </CardContent>
-                </Link>
+              <Card 
+                key={service.href} 
+                className={`${
+                  !isResident 
+                    ? 'opacity-50 pointer-events-none' 
+                    : 'group hover:shadow-lg transition-all duration-300 cursor-pointer'
+                }`}
+              >
+                {isResident ? (
+                  <Link to={service.href}>
+                    <CardHeader>
+                      <div
+                        className={`w-12 h-12 rounded-lg ${service.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
+                      >
+                        <service.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <CardTitle className="group-hover:text-primary transition-colors text-lg sm:text-xl">
+                        {service.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm sm:text-base">{service.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center text-primary font-medium group-hover:gap-2 transition-all text-sm sm:text-base">
+                        Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </CardContent>
+                  </Link>
+                ) : (
+                  <>
+                    <CardHeader>
+                      <div className={`w-12 h-12 rounded-lg ${service.color} flex items-center justify-center mb-4`}>
+                        <service.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <CardTitle className="text-lg sm:text-xl">
+                        {service.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm sm:text-base">{service.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-muted-foreground text-sm text-center">Available to residents only</div>
+                    </CardContent>
+                  </>
+                )}
               </Card>
             ))}
           </div>

@@ -10,7 +10,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     name = serializers.CharField(write_only=True)
     contact_number = serializers.CharField(write_only=True)
     address = serializers.CharField(write_only=True)
-    houseNum = serializers.IntegerField(write_only=True, required=False, allow_null=True)  # 👈 added
+    houseNum = serializers.CharField(write_only=True, required=False, allow_null=True)  # 👈 added
     civil_status = serializers.CharField(write_only=True)
     birthdate = serializers.DateField(write_only=True)
     role = serializers.CharField(write_only=True, required=False, default='user')

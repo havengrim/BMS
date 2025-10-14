@@ -1,19 +1,17 @@
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import {
   Phone,
   Mail,
   MapPin,
   Clock,
-  Facebook,
   Globe,
   FileText,
   Users,
   MessageSquare,
   Shield,
   Heart,
-  ExternalLink,
+  Facebook,
 } from "lucide-react"
 import images from "@/assets/images"
 
@@ -24,18 +22,12 @@ const quickLinks = [
   { name: "Announcements", href: "/announcements", icon: Globe },
 ]
 
-const importantLinks = [
-  { name: "Privacy Policy", href: "/privacy" },
-  { name: "Terms of Service", href: "/terms" },
-  { name: "Accessibility", href: "/accessibility" },
-  { name: "Site Map", href: "/sitemap" },
-]
 
 const contactInfo = [
   {
     icon: Phone,
     label: "Phone",
-    details: ["(02) 8123-4567", "0917-123-4567"],
+    details: ["09694735789"],
   },
   {
     icon: Mail,
@@ -45,7 +37,7 @@ const contactInfo = [
   {
     icon: MapPin,
     label: "Address",
-    details: ["Barangay Hall, Sindalan", "123 Main Street", "City, Province 1234"],
+    details: ["Sindalan Barangay Hall, MAHARLIKA STREET, San Fernando, Pampanga,2000"],
   },
   {
     icon: Clock,
@@ -76,9 +68,11 @@ export function Footer() {
 
             {/* Social Media */}
             <div className="flex space-x-4">
-              <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
-                <Facebook className="h-5 w-5" />
-              </Button>
+             <a href="https://www.facebook.com/share/1baevwAKKB/" target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
+                  <Facebook className="h-5 w-5" />
+                </Button>
+              </a>
               <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
                 <Globe className="h-5 w-5" />
               </Button>
@@ -105,22 +99,7 @@ export function Footer() {
               ))}
             </ul>
 
-            <Separator className="my-6 bg-slate-700" />
-
-            <h4 className="text-md font-medium text-white mb-3">Important Links</h4>
-            <ul className="space-y-2">
-              {importantLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="text-sm text-slate-200 hover:text-white transition-colors flex items-center gap-1"
-                  >
-                    {link.name}
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          
           </div>
 
           {/* Contact Information */}
@@ -154,7 +133,7 @@ export function Footer() {
                 <Shield className="h-4 w-4" />
                 Emergency Hotline
               </h4>
-              <p className="text-white font-bold text-lg">0918-765-4321</p>
+              <p className="text-white font-bold text-lg">09694735789</p>
               <p className="text-red-300 text-sm">Available 24/7</p>
             </div>
           </div>
