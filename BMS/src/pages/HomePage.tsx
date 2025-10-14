@@ -71,9 +71,9 @@ const contactMethods = [
     title: "Call Us",
     description: "For urgent matters or immediate assistance",
     icon: Phone,
-    details: ["(02) 8123-4567", "0917-123-4567"],
+    details: ["09694735789"],
     action: "Call Now",
-    href: "tel:+6321234567",
+    href: "tel:09694735789",
     color: "bg-blue-500",
   },
   {
@@ -500,7 +500,7 @@ export default function HomePage() {
                 <CardDescription className="text-red-600">
                   For urgent matters requiring immediate attention
                 </CardDescription>
-                <div className="text-2xl font-bold text-red-800 mt-2">0917-EMERGENCY (0917-363-7436)</div>
+                <div className="text-2xl font-bold text-red-800 mt-2">(09694735789)</div>
                 <div className="text-sm text-red-600 mt-2">Available 24/7 for emergencies only</div>
                 
                 {/* Emergency Report Button */}

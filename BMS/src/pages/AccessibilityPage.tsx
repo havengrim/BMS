@@ -43,8 +43,7 @@ export default function AccessibilityPage() {
 
             <h3>Alternative Access</h3>
             <p>
-              If you have difficulty using our online services, you can also visit our office or call us at (02)
-              8123-4567 for assistance.
+              If you have difficulty using our online services, you can also visit our office or call us at 09694735789 for assistance.
             </p>
           </CardContent>
         </Card>
