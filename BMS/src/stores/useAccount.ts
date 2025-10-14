@@ -163,10 +163,34 @@ export const useRegister = (): UseMutationResult<RegisterResponse, Error, Regist
         variant: 'default',
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      let description = 'Please check your inputs and try again.';
+      
+      if (error.response?.data) {
+        const data = error.response.data;
+        
+        if (data.confirm_password) {
+          description = 'Passwords do not match. Please check and try again.';
+        } else if (data.username) {
+          description = 'Username already taken. Please choose another one.';
+        } else if (data.email) {
+          description = 'Email already registered. Please use another email.';
+        } else if (data.contact_number || data.phone) {
+          description = 'Phone number already in use.';
+        } else if (data.password) {
+          description = 'Password does not meet requirements. Please try a stronger password.';
+        } else {
+          // Fallback for other field errors
+          const firstKey = Object.keys(data)[0];
+          if (firstKey) {
+            description = `${firstKey.charAt(0).toUpperCase() + firstKey.slice(1)} is invalid.`;
+          }
+        }
+      }
+
       toast({
         title: 'Registration Failed',
-        description: error.message || 'Please check your inputs and try again.',
+        description,
         variant: 'destructive',
       });
     },
