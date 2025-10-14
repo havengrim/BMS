@@ -177,14 +177,14 @@ export default function ContactPage() {
 
       {/* Header Section */}
       <div className="border-b bg-gradient-to-r from-blue-50 to-green-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-6">
               <Phone className="h-4 w-4" />
               Contact Information
             </div>
-            <h1 className="text-4xl font-bold tracking-tight mb-4">Get in Touch with Barangay Sindalan</h1>
-            <p className="text-lg text-muted-foreground">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">Get in Touch with Barangay Sindalan</h1>
+            <p className="text-base sm:text-lg text-muted-foreground">
               We're here to serve our community. Reach out to us for any inquiries, assistance, or feedback. Your local
               government is committed to providing excellent public service.
             </p>
@@ -192,9 +192,9 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Quick Contact Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12 sm:mb-16">
           {contactInfo.map((info, index) => (
             <Card key={index} className="hover:shadow-md transition-all duration-200 border-l-4 border-l-primary/30">
               <CardHeader className="pb-3">
@@ -202,7 +202,7 @@ export default function ContactPage() {
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <info.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <CardTitle className="text-lg">{info.title}</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">{info.title}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
@@ -219,7 +219,7 @@ export default function ContactPage() {
         </div>
 
         {/* Main Content */}
-        <div className="space-y-16">
+        <div className="space-y-12 sm:space-y-16">
           {/* Sangguniang Barangay Section */}
           <section>
             <div className="mb-8">
@@ -229,7 +229,7 @@ export default function ContactPage() {
                   Sangguniang Barangay
                 </Badge>
               </div>
-              <h2 className="text-3xl font-bold tracking-tight mb-4">Barangay Sindalan Officials</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">Barangay Sindalan Officials</h2>
               <p className="text-muted-foreground max-w-2xl">
                 Meet our dedicated public servants committed to serving our community.
               </p>
@@ -237,16 +237,16 @@ export default function ContactPage() {
 
             {/* Punong Barangay - Featured */}
             <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-blue-50">
-              <CardHeader>
-                <div className="flex items-center gap-4">
+              <CardHeader className="px-4 sm:px-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <Avatar className="h-16 w-16 ring-2 ring-primary/20">
                     <AvatarImage src="/placeholder.svg?height=64&width=64&text=BA" alt="Dr. Benjamin Angeles" />
                     <AvatarFallback className="bg-primary text-primary-foreground font-bold">BA</AvatarFallback>
                   </Avatar>
-                  <div>
+                  <div className="flex-1">
                     <CardTitle className="text-xl text-primary">Dr. Benjamin "Doc Benjie" F. Angeles</CardTitle>
                     <CardDescription className="text-lg font-medium">Punong Barangay</CardDescription>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-2 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Phone className="h-4 w-4" />
                         0917-111-1111
@@ -263,36 +263,39 @@ export default function ContactPage() {
 
             {/* Officials Table */}
             <Card>
-              <CardHeader>
+              <CardHeader className="px-4 sm:px-6">
                 <CardTitle>Sangguniang Barangay Members</CardTitle>
                 <CardDescription>Complete list of barangay officials and their responsibilities</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[600px] sm:min-w-full">
                     <thead className="border-b bg-muted/30">
                       <tr>
-                        <th className="text-left p-4 font-medium">Official</th>
-                        <th className="text-left p-4 font-medium">Position</th>
-                        <th className="text-left p-4 font-medium">Committees</th>
-                        <th className="text-left p-4 font-medium">Contact</th>
+                        <th className="text-left p-2 sm:p-4 font-medium">Official</th>
+                        <th className="text-left p-2 sm:p-4 font-medium hidden sm:table-cell">Position</th>
+                        <th className="text-left p-2 sm:p-4 font-medium hidden md:table-cell">Committees</th>
+                        <th className="text-left p-2 sm:p-4 font-medium">Contact</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {officials.slice(1, 8).map((official, index) => (
                         <tr key={index} className="hover:bg-muted/20">
-                          <td className="p-4">
+                          <td className="p-2 sm:p-4">
                             <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                              <Avatar className="h-10 w-10 flex-shrink-0">
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
                                   {official.initials}
                                 </AvatarFallback>
                               </Avatar>
-                              <span className="font-medium">{official.name}</span>
+                              <div>
+                                <span className="font-medium block">{official.name}</span>
+                                <span className="text-xs sm:hidden text-muted-foreground block">{official.position}</span>
+                              </div>
                             </div>
                           </td>
-                          <td className="p-4 text-muted-foreground">{official.position}</td>
-                          <td className="p-4">
+                          <td className="p-2 sm:p-4 text-muted-foreground hidden sm:table-cell">{official.position}</td>
+                          <td className="p-2 sm:p-4 hidden md:table-cell">
                             <div className="space-y-1">
                               {official.committees.map((committee, idx) => (
                                 <Badge key={idx} variant="outline" className="text-xs mr-1">
@@ -301,7 +304,7 @@ export default function ContactPage() {
                               ))}
                             </div>
                           </td>
-                          <td className="p-4 text-sm text-muted-foreground">{official.contact}</td>
+                          <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground">{official.contact}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -315,8 +318,8 @@ export default function ContactPage() {
               {officials.slice(8).map((official, index) => (
                 <Card key={index} className="hover:shadow-md transition-all duration-200">
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-12 w-12 flex-shrink-0">
                         <AvatarFallback
                           className={`${
                             official.position === "SK Chairperson"
@@ -324,15 +327,15 @@ export default function ContactPage() {
                               : official.position === "Barangay Secretary"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-orange-100 text-orange-700"
-                          } font-medium`}
+                          } font-medium text-sm`}
                         >
                           {official.initials}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <h4 className="font-medium">{official.name}</h4>
-                        <p className="text-sm text-muted-foreground">{official.position}</p>
-                        <p className="text-xs text-muted-foreground">{official.committees[0]}</p>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm sm:text-base truncate">{official.name}</h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{official.position}</p>
+                        <p className="text-xs text-muted-foreground truncate">{official.committees[0]}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -342,21 +345,21 @@ export default function ContactPage() {
           </section>
 
           {/* Services Section */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {/* Emergency Contacts */}
             <Card className="border-destructive/20 hover:shadow-lg transition-all duration-200">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-destructive/10 rounded-lg">
+              <CardHeader className="px-4 sm:px-6">
+                <div className="flex items-start sm:items-center gap-2">
+                  <div className="p-2 bg-destructive/10 rounded-lg flex-shrink-0">
                     <Shield className="h-5 w-5 text-destructive" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <CardTitle className="text-destructive">Emergency Hotline</CardTitle>
                     <CardDescription>24/7 emergency response</CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 pt-4">
+              <CardContent className="space-y-3 pt-4 px-4 sm:px-6">
                 <Button variant="destructive" className="w-full shadow-sm" size="sm">
                   <Phone className="h-4 w-4 mr-2" />
                   0918-765-4321
@@ -374,18 +377,18 @@ export default function ContactPage() {
 
             {/* Social Media */}
             <Card className="hover:shadow-lg transition-all duration-200">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-muted rounded-lg">
+              <CardHeader className="px-4 sm:px-6">
+                <div className="flex items-start sm:items-center gap-2">
+                  <div className="p-2 bg-muted rounded-lg flex-shrink-0">
                     <Globe className="h-5 w-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <CardTitle>Stay Connected</CardTitle>
                     <CardDescription>Follow for updates</CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 pt-4">
+              <CardContent className="space-y-3 pt-4 px-4 sm:px-6">
                 <Button variant="outline" className="w-full justify-start hover:bg-muted/50 bg-transparent" size="sm">
                   <Facebook className="h-4 w-4 mr-2" />
                   @SindalanBarangay
@@ -399,18 +402,18 @@ export default function ContactPage() {
 
             {/* Office Hours */}
             <Card className="hover:shadow-lg transition-all duration-200">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-muted rounded-lg">
+              <CardHeader className="px-4 sm:px-6">
+                <div className="flex items-start sm:items-center gap-2">
+                  <div className="p-2 bg-muted rounded-lg flex-shrink-0">
                     <Calendar className="h-5 w-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <CardTitle>Office Hours</CardTitle>
                     <CardDescription>Visit us anytime</CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-4">
+              <CardContent className="pt-4 px-4 sm:px-6">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center p-2 bg-muted/30 rounded border">
                     <span className="font-medium">Monday - Friday</span>
@@ -432,12 +435,12 @@ export default function ContactPage() {
           {/* Location Map */}
           <section>
             <Card className="overflow-hidden hover:shadow-lg transition-all duration-200">
-              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-blue-50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
+              <CardHeader className="px-4 sm:px-6">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                     <MapPin className="h-6 w-6 text-primary" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <CardTitle>Our Location</CardTitle>
                     <CardDescription>
                       Barangay Hall, Sindalan - San Fernando City, Pampanga, Philippines 2000
@@ -445,23 +448,6 @@ export default function ContactPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
-                <div className="h-80 bg-gradient-to-br from-muted/20 to-primary/5 flex items-center justify-center border-t relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.05)_1px,transparent_1px)] bg-[length:20px_20px]"></div>
-                  <div className="text-center text-muted-foreground relative z-10">
-                    <div className="p-6 bg-background rounded-lg shadow-lg border border-primary/20">
-                      <MapPin className="h-12 w-12 mx-auto mb-4 text-primary" />
-                      <p className="font-medium text-primary">Interactive Map</p>
-                      <p className="text-sm">Map integration would be displayed here</p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Barangay Hall, Sindalan
-                        <br />
-                        San Fernando City, Pampanga
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
             </Card>
           </section>
         </div>
