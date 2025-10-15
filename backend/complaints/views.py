@@ -17,13 +17,8 @@ class ComplaintCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        reference_number = generate_unique_reference_number()
-        complaint = serializer.save(user=self.request.user, reference_number=reference_number)
+        serializer.save(user=self.request.user)
 
-        evidence_file = self.request.FILES.get('evidence')
-        if evidence_file:
-            complaint.evidence = evidence_file
-            complaint.save(update_fields=['evidence'])
 
 
 class ComplaintDetailView(generics.RetrieveAPIView):
@@ -45,12 +40,18 @@ class ComplaintUpdateView(generics.UpdateAPIView):
     lookup_field = 'id'
 
     def perform_update(self, serializer):
-        complaint = serializer.save()
+        instance = serializer.save()
         evidence_file = self.request.FILES.get('evidence')
         if evidence_file:
-            complaint.evidence = evidence_file
-            complaint.save(update_fields=['evidence'])
-        return complaint
+            instance.evidence = evidence_file
+            instance.save(update_fields=['evidence'])
+        return instance
+
+    def get_object(self):
+        obj = super().get_object()
+        if obj.user != self.request.user:
+            raise PermissionDenied("You do not have permission to update this complaint.")
+        return obj
 
 class ComplaintDeleteView(generics.DestroyAPIView):
     queryset = Complaint.objects.all()
