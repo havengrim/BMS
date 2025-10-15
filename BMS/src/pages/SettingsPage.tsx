@@ -33,6 +33,7 @@ interface UserProfile {
     name: string;
     contact_number: string;
     address: string;
+    houseNum: number;
     civil_status: string;
     birthdate: string;
     role: string;
@@ -91,6 +92,7 @@ export default function SettingsPage() {
         name: "",
         contact_number: "",
         address: "",
+        houseNum: 0,
         civil_status: "single",
         birthdate: "",
         role: "",
@@ -160,7 +162,7 @@ export default function SettingsPage() {
           ...prev,
           profile: {
             ...prev.profile,
-            [field]: value,
+            [field]: field === "houseNum" ? parseInt(value) || 0 : value,
           },
         };
       }
@@ -239,6 +241,7 @@ export default function SettingsPage() {
     data.append("profile.name", formData.profile.name);
     data.append("profile.contact_number", formData.profile.contact_number);
     data.append("profile.address", formData.profile.address.trim());
+    data.append("profile.houseNum", formData.profile.houseNum.toString());
     data.append("profile.civil_status", formData.profile.civil_status);
     data.append("profile.birthdate", formData.profile.birthdate);
     data.append("profile.role", formData.profile.role);
@@ -391,8 +394,8 @@ export default function SettingsPage() {
       ctx.fillText("ADDRESS:", x, y);
       ctx.globalAlpha = 1.0;
       ctx.font = `${10 * scale}px Arial`;
-      const address = formData.profile.address || "N/A";
-      const addressLines = splitText(address, ctx, 300 * scale);
+      const fullAddress = formData.profile.houseNum ? `${formData.profile.houseNum} ${formData.profile.address}` : formData.profile.address || "N/A";
+      const addressLines = splitText(fullAddress, ctx, 300 * scale);
       addressLines.forEach((line, index) => {
         ctx.fillText(line, x, y + 12 * scale + index * 12 * scale);
       });
@@ -509,6 +512,8 @@ export default function SettingsPage() {
       );
     }
 
+    const fullAddress = formData.profile.houseNum ? `${formData.profile.houseNum} ${formData.profile.address}` : formData.profile.address || "N/A";
+
     return (
       <div className="w-100" style={{ aspectRatio: "1.6/1" }}>
         <div
@@ -550,7 +555,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <div className="text-xs opacity-75">ADDRESS:</div>
-                  <div className="text-xs leading-tight line-clamp-2">{formData.profile.address || "N/A"}</div>
+                  <div className="text-xs leading-tight line-clamp-2">{fullAddress}</div>
                 </div>
               </div>
             </div>
@@ -691,7 +696,17 @@ export default function SettingsPage() {
                         {phoneError && <span className="text-red-500 text-sm">{phoneError}</span>}
                       </div>
                     </div>
-                    
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="houseNum">House Number</Label>
+                      <Input
+                        id="houseNum"
+                        type="number"
+                        min="0"
+                        value={formData?.profile.houseNum ?? ""}
+                        onChange={(e) => handleInputChange("houseNum", e.target.value, true)}
+                        placeholder="e.g., 123"
+                      />
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="address">Address</Label>

@@ -1,3 +1,4 @@
+from datetime import date
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile
@@ -96,24 +97,45 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'profile']
 
+    def to_internal_value(self, data):
+        # Handle flat dotted keys (e.g., "profile.name") and convert to nested
+        nested_data = {}
+        profile_data = {}
+
+        for key, value in data.items():
+            if key.startswith('profile.'):
+                # Extract nested profile field (e.g., "profile.name" -> "name": value)
+                profile_key = key.split('.', 1)[1]
+                profile_data[profile_key] = value
+            else:
+                # Top-level user fields
+                nested_data[key] = value
+
+        if profile_data:
+            nested_data['profile'] = profile_data
+
+        return super().to_internal_value(nested_data)
+
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})
-        profile = instance.profile
+        profile, created = Profile.objects.get_or_create(user=instance)  # 👈 Use get_or_create for atomicity
 
+        # Update user
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
         instance.save()
 
-        profile.name = profile_data.get('name', profile.name)
-        profile.contact_number = profile_data.get('contact_number', profile.contact_number)
-        profile.address = profile_data.get('address', profile.address)
-        profile.houseNum = profile_data.get('houseNum', profile.houseNum)  # 👈 added
-        profile.civil_status = profile_data.get('civil_status', profile.civil_status)
-        profile.birthdate = profile_data.get('birthdate', profile.birthdate)
-        profile.role = profile_data.get('role', profile.role)
+        # Update profile (with defaults if new)
+        profile.name = profile_data.get('name', profile.name or instance.username)
+        profile.contact_number = profile_data.get('contact_number', profile.contact_number or '')
+        profile.address = profile_data.get('address', profile.address or '')
+        profile.houseNum = profile_data.get('houseNum', profile.houseNum or 0)  # 👈 ADD
+        profile.civil_status = profile_data.get('civil_status', profile.civil_status or 'single')
+        profile.birthdate = profile_data.get('birthdate', profile.birthdate or date(1900, 1, 1))
+        profile.role = profile_data.get('role', profile.role or 'user')
 
         image = profile_data.get('image', None)
-        if image:
+        if image is not None:  # Handle explicit None (no change)
             profile.image = image
 
         profile.save()
