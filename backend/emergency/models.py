@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from .storages import SupabaseStorage
 
-supabase_storage = SupabaseStorage()
+
 class EmergencyReport(models.Model):
     INCIDENT_TYPES = [
         ('fire', 'Fire'),
@@ -27,17 +27,22 @@ class EmergencyReport(models.Model):
     longitude = models.DecimalField(max_digits=10, decimal_places=6, default=0.0, null=True)
     alert_message = models.TextField(default="🚨 Emergency reported. Stay alert.")
 
-    # Optional media upload, can be image/audio/video
-    media_file = models.FileField(storage=supabase_storage, upload_to='emergency_media/')
-    
+    # Optional media upload (image/audio/video)
+    media_file = models.FileField(
+        storage=SupabaseStorage,  # Use class, not instance
+        upload_to='emergency_media/',
+        null=True,
+        blank=True
+    )
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
+
     # Location fields
     location_text = models.CharField(max_length=255)  # e.g., "123 Main St" or "Near City Park"
 
-    # Added contact phone number
+    # Contact phone number
     contact_number = models.CharField(max_length=20, blank=True, null=True)
-    
+
     submitted_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -48,7 +53,7 @@ class EmergencyReport(models.Model):
 class EmergencyAlert(models.Model):
     type = models.CharField(max_length=100, unique=True)  # e.g., 'rape', 'thief', 'fire'
     alert_message = models.TextField(default="🚨 Emergency reported. Stay alert.")
-  # e.g., '🚨 Theft incident reported nearby. Secure your belongings.'
+    # e.g., '🚨 Theft incident reported nearby. Secure your belongings.'
 
     def __str__(self):
         return self.type

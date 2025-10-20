@@ -164,51 +164,58 @@ import axios from 'axios';
   };
 
 
-  export const useRegister = (): UseMutationResult<RegisterResponse, Error, RegisterInput> => {
-    const { toast } = useToast();
+export const useRegister = (): UseMutationResult<RegisterResponse, Error, RegisterInput> => {
+  const { toast } = useToast();
 
-    return useMutation<RegisterResponse, Error, RegisterInput>({
-      mutationFn: (data) => api.post('/api/register/', data).then((res) => res.data),
-      onSuccess: (data) => {
-        toast({
-          title: 'Registration Successful',
-          description: data.message || 'You can now login with your credentials.',
-          variant: 'default',
-        });
-      },
-      onError: (error: any) => {
-        let description = 'Please check your inputs and try again.';
-        
-        if (error.response?.data) {
-          const data = error.response.data;
-          
-          if (data.confirm_password) {
-            description = 'Passwords do not match. Please check and try again.';
-          } else if (data.username) {
-            description = 'Username already taken. Please choose another one.';
-          } else if (data.email) {
-            description = 'Email already registered. Please use another email.';
-          } else if (data.contact_number || data.phone) {
-            description = 'Phone number already in use.';
-          } else if (data.password) {
-            description = 'Password does not meet requirements. Please try a stronger password.';
-          } else {
-            // Fallback for other field errors
-            const firstKey = Object.keys(data)[0];
-            if (firstKey) {
-              description = `${firstKey.charAt(0).toUpperCase() + firstKey.slice(1)} is invalid.`;
-            }
+  return useMutation<RegisterResponse, Error, RegisterInput>({
+    mutationFn: (data) => api.post('/api/register/', data).then((res) => res.data),
+
+    onSuccess: (data) => {
+      toast({
+        title: 'Registration Successful',
+        description: data.message || 'You can now login with your credentials.',
+        variant: 'default',
+      });
+    },
+
+    onError: (error: any) => {
+      let description = 'Please check your inputs and try again.';
+
+      if (error.response?.data) {
+        const data = error.response.data;
+
+        if (data.non_field_errors) {
+          // ✅ Handle weak password validation errors
+          description = Array.isArray(data.non_field_errors)
+            ? data.non_field_errors.join(' ') // OR use '\n' for new lines
+            : data.non_field_errors;
+        } else if (data.confirm_password) {
+          description = 'Passwords do not match. Please check and try again.';
+        } else if (data.username) {
+          description = 'Username already taken. Please choose another one.';
+        } else if (data.email) {
+          description = 'Email already registered. Please use another email.';
+        } else if (data.contact_number || data.phone) {
+          description = 'Phone number already in use.';
+        } else if (data.password) {
+          description = 'Password does not meet requirements. Please try a stronger password.';
+        } else {
+          // Fallback for other field errors
+          const firstKey = Object.keys(data)[0];
+          if (firstKey) {
+            description = `${firstKey.charAt(0).toUpperCase() + firstKey.slice(1)} is invalid.`;
           }
         }
+      }
 
-        toast({
-          title: 'Registration Failed',
-          description,
-          variant: 'destructive',
-        });
-      },
-    });
-  };
+      toast({
+        title: 'Registration Failed',
+        description,
+        variant: 'destructive',
+      });
+    },
+  });
+};
 
   export const useUsers = () => {
     return useQuery<User[], Error>({
