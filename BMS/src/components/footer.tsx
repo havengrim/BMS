@@ -14,6 +14,7 @@ import {
   Facebook,
 } from "lucide-react"
 import images from "@/assets/images"
+import { useAuthStore } from "@/stores/authStore" // ✅ Correct store
 
 const quickLinks = [
   { name: "Certificate Requests", href: "/certificates", icon: FileText },
@@ -22,36 +23,23 @@ const quickLinks = [
   { name: "Announcements", href: "/announcements", icon: Globe },
 ]
 
-
 const contactInfo = [
-  {
-    icon: Phone,
-    label: "Phone",
-    details: ["09694735789"],
-  },
-  {
-    icon: Mail,
-    label: "Email",
-    details: ["sindalanbarangay@yahoo.com"],
-  },
-  {
-    icon: MapPin,
-    label: "Address",
-    details: ["Sindalan Barangay Hall, MAHARLIKA STREET, San Fernando, Pampanga,2000"],
-  },
-  {
-    icon: Clock,
-    label: "Office Hours",
-    details: ["Mon-Fri: 8:00 AM - 5:00 PM", "Sat: 8:00 AM - 12:00 PM", "Sun: Closed"],
-  },
+  { icon: Phone, label: "Phone", details: ["09694735789"] },
+  { icon: Mail, label: "Email", details: ["sindalanbarangay@yahoo.com"] },
+  { icon: MapPin, label: "Address", details: ["Sindalan Barangay Hall, MAHARLIKA STREET, San Fernando, Pampanga,2000"] },
+  { icon: Clock, label: "Office Hours", details: ["Mon-Fri: 8:00 AM - 5:00 PM", "Sat: 8:00 AM - 12:00 PM", "Sun: Closed"] },
 ]
 
 export function Footer() {
+  const { user } = useAuthStore()
+  const isResident = user?.profile?.role === "resident" // ✅ Final check
+
   return (
     <footer className="bg-green-700 text-slate-100">
       {/* Main Footer Content */}
       <div className="mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
@@ -68,7 +56,7 @@ export function Footer() {
 
             {/* Social Media */}
             <div className="flex space-x-4">
-             <a href="https://www.facebook.com/share/1baevwAKKB/" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.facebook.com/share/1baevwAKKB/" target="_blank" rel="noopener noreferrer">
                 <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
                   <Facebook className="h-5 w-5" />
                 </Button>
@@ -88,18 +76,27 @@ export function Footer() {
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="flex items-center space-x-2 text-sm text-slate-200 hover:text-white transition-colors group"
-                  >
-                    <link.icon className="h-4 w-4 group-hover:text-primary transition-colors" />
-                    <span>{link.name}</span>
-                  </Link>
+                  {isResident ? (
+                    <Link
+                      to={link.href}
+                      className="flex items-center space-x-2 text-sm text-slate-200 hover:text-white transition-colors group"
+                    >
+                      <link.icon className="h-4 w-4 group-hover:text-primary transition-colors" />
+                      <span>{link.name}</span>
+                    </Link>
+                  ) : (
+                    <button
+                      disabled
+                      className="flex items-center space-x-2 text-sm text-gray-400 cursor-not-allowed opacity-50"
+                      title="Only residents can access this"
+                    >
+                      <link.icon className="h-4 w-4" />
+                      <span>{link.name}</span>
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
-
-          
           </div>
 
           {/* Contact Information */}
@@ -124,10 +121,8 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Newsletter & Emergency */}
+          {/* Emergency Contact */}
           <div>
-
-            {/* Emergency Contact */}
             <div className="bg-red-900/20 border border-red-800/30 rounded-lg p-4">
               <h4 className="text-red-400 font-semibold mb-2 flex items-center gap-2">
                 <Shield className="h-4 w-4" />
