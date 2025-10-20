@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import EmergencyAlert, EmergencyReport
 
 class EmergencyReportSerializer(serializers.ModelSerializer):
-    media_file = serializers.FileField(required=True)
+    media_file = serializers.FileField(required=False, allow_null=True)
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
 
@@ -48,6 +48,8 @@ class EmergencyReportPublicSerializer(serializers.ModelSerializer):
             'id',
             'incident_type',
             'location_text',
+            'name',
+            'status',
             'submitted_at',
             'alert_message',
             'media_file',

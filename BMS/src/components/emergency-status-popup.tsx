@@ -238,7 +238,7 @@ const renderDetailsContent = (report: EmergencyReport) => (
 );
 
 return (
-  <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm">
+  <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-50 w-full max-w-sm">
     <Card className="shadow-lg border-border bg-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -291,8 +291,17 @@ return (
                           {report.incident_type.toUpperCase()}: {report.location_text}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {'Reported by '}{report.name}{' at '}{" "}
-                          {new Date(report.submitted_at).toLocaleTimeString()}
+                            <strong>{'Reported By:'}</strong> {report.name || "N/A"}
+                              {new Date(report.submitted_at).toLocaleString([], {
+                                    year: 'numeric',
+                                    month: 'short',   // "Oct"
+                                    day: '2-digit',   // "14"
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                  })}
+
+
                         </p>
                         <Select
                           onValueChange={(value: string) => handleStatusChange(report.id, value)}

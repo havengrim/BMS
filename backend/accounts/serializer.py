@@ -1,21 +1,26 @@
-from datetime import date
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from datetime import date
+import logging
 
+logger = logging.getLogger(__name__)
 
+# --------------------------
+# Register Serializer
+# --------------------------
 class RegisterSerializer(serializers.ModelSerializer):
     name = serializers.CharField(write_only=True)
     contact_number = serializers.CharField(write_only=True)
     address = serializers.CharField(write_only=True)
-    houseNum = serializers.IntegerField(write_only=True, required=False, allow_null=True)  # 👈 added
+    houseNum = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     civil_status = serializers.CharField(write_only=True)
     birthdate = serializers.DateField(write_only=True)
     role = serializers.CharField(write_only=True, required=False, default='user')
-    image = serializers.ImageField(write_only=True, required=False, allow_null=True)
+    image = serializers.FileField(write_only=True, required=False, allow_null=True)  # Updated
     confirm_password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -27,7 +32,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             'password',
             'confirm_password',
             'contact_number',
-            'houseNum',  # 👈 added
+            'houseNum',
             'address',
             'civil_status',
             'birthdate',
@@ -44,7 +49,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         contact_number = validated_data.pop('contact_number')
         address = validated_data.pop('address')
-        houseNum = validated_data.pop('houseNum', None)  # 👈 added
+        houseNum = validated_data.pop('houseNum', None)
         civil_status = validated_data.pop('civil_status')
         birthdate = validated_data.pop('birthdate')
         role = validated_data.pop('role', 'user')
@@ -63,7 +68,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             name=name,
             contact_number=contact_number,
             address=address,
-            houseNum=houseNum,  # 👈 added
+            houseNum=houseNum,
             civil_status=civil_status,
             birthdate=birthdate,
             role=role,
@@ -72,9 +77,11 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         return user
 
-
+# --------------------------
+# Profile Serializer
+# --------------------------
 class ProfileSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(required=False, allow_null=True)
+    image = serializers.FileField(required=False, allow_null=True)  # Updated
 
     class Meta:
         model = Profile
@@ -82,14 +89,16 @@ class ProfileSerializer(serializers.ModelSerializer):
             'name',
             'contact_number',
             'address',
-            'houseNum',  # 👈 added
+            'houseNum',
             'civil_status',
             'birthdate',
             'role',
             'image',
         ]
 
-
+# --------------------------
+# User Serializer
+# --------------------------
 class UserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer()
 
@@ -104,11 +113,9 @@ class UserSerializer(serializers.ModelSerializer):
 
         for key, value in data.items():
             if key.startswith('profile.'):
-                # Extract nested profile field (e.g., "profile.name" -> "name": value)
                 profile_key = key.split('.', 1)[1]
                 profile_data[profile_key] = value
             else:
-                # Top-level user fields
                 nested_data[key] = value
 
         if profile_data:
@@ -118,30 +125,40 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})
-        profile, created = Profile.objects.get_or_create(user=instance)  # 👈 Use get_or_create for atomicity
+        profile, created = Profile.objects.get_or_create(user=instance)
 
-        # Update user
+        # Update user fields
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
         instance.save()
 
-        # Update profile (with defaults if new)
+        # Update profile fields
         profile.name = profile_data.get('name', profile.name or instance.username)
         profile.contact_number = profile_data.get('contact_number', profile.contact_number or '')
         profile.address = profile_data.get('address', profile.address or '')
-        profile.houseNum = profile_data.get('houseNum', profile.houseNum or 0)  # 👈 ADD
+        profile.houseNum = profile_data.get('houseNum', profile.houseNum or 0)
         profile.civil_status = profile_data.get('civil_status', profile.civil_status or 'single')
         profile.birthdate = profile_data.get('birthdate', profile.birthdate or date(1900, 1, 1))
         profile.role = profile_data.get('role', profile.role or 'user')
 
+        # Store file or None
         image = profile_data.get('image', None)
-        if image is not None:  # Handle explicit None (no change)
+        if image is not None:
+            logger.info(f"Starting image upload for user {instance.id}: {getattr(image, 'name', 'Unknown')}")
             profile.image = image
 
-        profile.save()
+        try:
+            profile.save()
+            logger.info(f"Profile {profile.id} saved successfully for user {instance.id}. File: {profile.image.name if profile.image else 'None'}")
+        except Exception as e:
+            logger.error(f"Profile save failed for user {instance.id}: {str(e)}", exc_info=True)
+            raise serializers.ValidationError({"detail": f"Failed to save profile: {str(e)}"})
+
         return instance
 
-
+# --------------------------
+# Custom Token Serializer
+# --------------------------
 class CustomTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
@@ -161,7 +178,6 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
             )
 
         user = users.first()
-
         user = authenticate(username=user.username, password=password)
         if not user:
             raise serializers.ValidationError({"password": "Incorrect password."})
@@ -180,11 +196,11 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
                     "name": profile.name if profile else None,
                     "contact_number": profile.contact_number if profile else None,
                     "address": profile.address if profile else None,
-                    "houseNum": profile.houseNum if profile else None,  # 👈 added
+                    "houseNum": profile.houseNum if profile else None,
                     "civil_status": profile.civil_status if profile else None,
                     "birthdate": profile.birthdate if profile else None,
                     "role": profile.role if profile else None,
-                    "image": profile.image.url if profile and profile.image else None,
+                    "image": profile.image.name if profile and profile.image else None,
                 } if profile else None,
             },
         }
