@@ -108,7 +108,7 @@ const getStatusText = (status: string) => {
     case "completed":
       return "Claimed";
     default:
-      return "Unknown";
+      return "Rejected";
   }
 };
 

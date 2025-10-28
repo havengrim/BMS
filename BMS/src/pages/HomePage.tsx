@@ -154,7 +154,7 @@ export default function HomePage() {
                 className="text-lg px-8 font-medium text-black bg-white hover:bg-gray-200 w-full sm:w-auto"
                 variant="outline"
               >
-                <Link to="/certificates">
+                <Link to="/login">
                   Get Started <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -307,14 +307,14 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <div className="flex flex-col sm:flex-row gap-4">
+              {/* <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild className="w-full sm:w-auto">
                   <Link to="/about">Learn our approach</Link>
                 </Button>
                 <Button variant="outline" asChild className="w-full sm:w-auto bg-transparent">
                   <Link to="/achievements">View all achievements</Link>
                 </Button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

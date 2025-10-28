@@ -128,3 +128,34 @@ export const useDeleteCertificate = () => {
     },
   })
 }
+
+// EXPORT all reports (downloads Excel)
+export const useExportReports = () => {
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.get(`/export-report/`, {
+        responseType: "blob", // important for file downloads
+        withCredentials: true,
+      })
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement("a")
+      link.href = url
+      link.setAttribute("download", "Consolidated_Reports.xlsx")
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+
+      return response.data
+    },
+    onSuccess: () => {
+      toast({ title: "Exported", description: "Excel report downloaded successfully." })
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to export reports.", variant: "destructive" })
+    },
+  })
+}

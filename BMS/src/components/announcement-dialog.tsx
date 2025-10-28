@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Calendar, Clock, MapPin, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Announcement } from "@/stores/useAnnouncements"
+import { Link } from "react-router-dom"
 
 interface AnnouncementDialogProps {
   announcement: Announcement | null
@@ -74,7 +75,9 @@ export function AnnouncementDialog({ announcement, open, onOpenChange }: Announc
             <Button variant="outline" className="flex-1 bg-transparent" onClick={() => onOpenChange(false)}>
               Close
             </Button>
-            <Button className="flex-1">Contact for More Info</Button>
+            <Link to="/contact">       
+              <Button className="flex-1">Contact for More Info</Button>
+            </Link>
           </div>
         </div>
       </DialogContent>

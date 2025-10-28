@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Phone, Mail, MapPin, Clock, MessageSquare, Facebook, Globe, Users, Shield, Calendar } from "lucide-react"
 import { Footer } from "@/components/footer"
+import { Link } from "react-router-dom"
 
 const contactInfo = [
   {
@@ -389,10 +390,12 @@ export default function ContactPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 pt-4 px-4 sm:px-6">
-                <Button variant="outline" className="w-full justify-start hover:bg-muted/50 bg-transparent" size="sm">
-                  <Facebook className="h-4 w-4 mr-2" />
-                  @SindalanBarangay
-                </Button>
+                <Link to="https://www.facebook.com/share/1baevwAKKB/" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" className="w-full justify-start hover:bg-muted/50 bg-transparent" size="sm">
+                    <Facebook className="h-4 w-4 mr-2" />
+                    @SindalanBarangay
+                  </Button>
+                </Link>
                 <Button variant="outline" className="w-full justify-start hover:bg-muted/50 bg-transparent" size="sm">
                   <Globe className="h-4 w-4 mr-2" />
                   sindalan.gov.ph

@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
-
+from . import views
 def health_check(request):
     return JsonResponse({"status": "ok"})
 urlpatterns = [
@@ -16,6 +16,8 @@ urlpatterns = [
     path('api/chatbot/', include('chatbot.urls')),
     path('api/emergencies/', include('emergency.urls')),
     path('api/blotters/', include('blotter.urls')),
+    path('export-report/', views.export_all_reports_excel, name='export_report'),
+
 ]
 
 # Serve media files in development
