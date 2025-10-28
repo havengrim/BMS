@@ -11,7 +11,11 @@ class Announcement(models.Model):
     end_date = models.DateField()
     location = models.CharField(max_length=255)
     target_audience = models.CharField(max_length=255)
-    image = models.ImageField(storage=supabase_storage,upload_to='announcements/', null=True, blank=True)
+    image = models.FileField(
+    storage=supabase_storage,
+    upload_to='announcements/',
+    null=True, blank=True
+)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

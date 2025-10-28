@@ -13,7 +13,16 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, FileText, Users, MessageSquare, User, LogOut, Notebook, Bell } from "lucide-react";
+import {
+  Menu,
+  FileText,
+  Users,
+  MessageSquare,
+  User,
+  LogOut,
+  Notebook,
+  Bell,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -31,7 +40,8 @@ const services = [
   {
     title: "Certificate Requests",
     href: "/certificates",
-    description: "Request barangay clearance, residency certificates, and more",
+    description:
+      "Request barangay clearance, residency certificates, and more",
     icon: FileText,
   },
   {
@@ -59,17 +69,22 @@ export function Navbar() {
   const navigate = useNavigate();
   const handleLogout = useLogout();
 
-const { user } = useAuthStore();
-const isLoggedIn = !!user;
+  const { user } = useAuthStore();
+  const isLoggedIn = !!user;
 
-const { data: emergencies } = useEmergencies(isLoggedIn);
-const emergencyList = Array.isArray(emergencies) ? emergencies : [];
-const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
+  const { data: emergencies } = useEmergencies(isLoggedIn);
+  const emergencyList = Array.isArray(emergencies) ? emergencies : [];
+  const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
 
   const isResidentOrUser =
     user && (user.profile?.role === "user" || user.profile?.role === "resident");
 
   const isResident = user?.profile?.role === "resident";
+
+  const isActive = (path: string) =>
+    location.pathname === path
+      ? "text-primary bg-primary/10 rounded-md"
+      : "text-muted-foreground hover:text-primary";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -96,51 +111,56 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
                 <NavigationMenuLink asChild>
                   <Link
                     to="/"
-                    className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
-                      location.pathname === "/" ? "text-primary" : "text-muted-foreground"
-                    }`}
+                    className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${isActive(
+                      "/"
+                    )}`}
                   >
                     Home
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
-            {isResident && (
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Services</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    {services.map((service) => (
-                      <li key={service.href}>
-                        <NavigationMenuLink asChild>
-                          <Link
-                            to={service.href}
-                            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                          >
-                            <div className="flex items-center gap-2">
-                              <service.icon className="h-4 w-4" />
-                              <div className="text-sm font-medium leading-none">{service.title}</div>
-                            </div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              {service.description}
-                            </p>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-            )}
+              {isResident && (
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Services</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                      {services.map((service) => (
+                        <li key={service.href}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={service.href}
+                              className={`block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors ${
+                                location.pathname === service.href
+                                  ? "bg-primary/10 text-primary"
+                                  : "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <service.icon className="h-4 w-4" />
+                                <div className="text-sm font-medium leading-none">
+                                  {service.title}
+                                </div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                {service.description}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              )}
+
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
                     to="/announcements"
-                    className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
-                      location.pathname === "/announcements"
-                        ? "text-primary"
-                        : "text-muted-foreground"
-                    }`}
+                    className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${isActive(
+                      "/announcements"
+                    )}`}
                   >
                     Announcements
                   </Link>
@@ -151,9 +171,9 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
                 <NavigationMenuLink asChild>
                   <Link
                     to="/contact"
-                    className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
-                      location.pathname === "/contact" ? "text-primary" : "text-muted-foreground"
-                    }`}
+                    className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${isActive(
+                      "/contact"
+                    )}`}
                   >
                     About Us
                   </Link>
@@ -162,22 +182,21 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
             </NavigationMenuList>
           </NavigationMenu>
 
+          {/* User Menu + Mobile */}
           <div className="flex items-center gap-2">
             {isResidentOrUser ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="relative">
-                    {/* Desktop Avatar */}
                     <Avatar className="cursor-pointer h-8 w-8 hidden md:flex">
                       <AvatarImage
-                          src={user?.profile?.image ?? undefined}
-                          alt={user?.username}
-                        />
+                        src={user?.profile?.image ?? undefined}
+                        alt={user?.username}
+                      />
                       <AvatarFallback className="font-semibold">
                         {user.username.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-
                     {hasInProgress && (
                       <span className="absolute -top-[-1px] -right-[-1px] h-2 w-2 rounded-full bg-red-500 ring-1 ring-white animate-pulse hidden sm:block"></span>
                     )}
@@ -225,21 +244,19 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
                   {isResidentOrUser && (
                     <div className="flex items-center gap-3 p-4 border-b">
                       <div className="relative">
-                           <Avatar className="h-12 w-12">
-                      <AvatarImage
-                          src={user?.profile?.image ?? undefined}
-                          alt={user?.username}
-                        />
-                      <AvatarFallback className="font-semibold">
-                        {user.username.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage
+                            src={user?.profile?.image ?? undefined}
+                            alt={user?.username}
+                          />
+                          <AvatarFallback className="font-semibold">
+                            {user.username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                         {hasInProgress && (
                           <span className="absolute -top-0.5 -right-[-1px] h-3 w-3 rounded-full bg-red-500 ring-1 ring-white animate-pulse"></span>
                         )}
                       </div>
-
                       <div className="flex flex-col ml-3">
                         <span className="font-medium text-sm">{user.username}</span>
                         <span className="text-xs text-muted-foreground capitalize">
@@ -253,8 +270,10 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
                   <div className="flex-1 p-4 space-y-4 overflow-y-auto">
                     <Link
                       to="/"
-                      className={`block py-2 text-lg font-medium transition-colors hover:text-primary ${
-                        location.pathname === "/" ? "text-primary" : ""
+                      className={`block py-2 px-3 rounded-md text-lg font-medium transition-all duration-200 ${
+                        location.pathname === "/"
+                          ? "bg-primary/10 text-primary"
+                          : "hover:text-primary"
                       }`}
                     >
                       Home
@@ -269,8 +288,10 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
                           <Link
                             key={service.href}
                             to={service.href}
-                            className={`flex items-center gap-3 py-2 text-sm transition-colors hover:text-primary ${
-                              location.pathname === service.href ? "text-primary" : ""
+                            className={`flex items-center gap-3 py-2 px-2 rounded-md text-sm transition-all duration-200 ${
+                              location.pathname === service.href
+                                ? "bg-primary/10 text-primary"
+                                : "hover:text-primary"
                             }`}
                           >
                             <service.icon className="h-4 w-4" />
@@ -282,8 +303,10 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
 
                     <Link
                       to="/announcements"
-                      className={`block py-2 text-lg font-medium transition-colors hover:text-primary ${
-                        location.pathname === "/announcements" ? "text-primary" : ""
+                      className={`block py-2 px-3 rounded-md text-lg font-medium transition-all duration-200 ${
+                        location.pathname === "/announcements"
+                          ? "bg-primary/10 text-primary"
+                          : "hover:text-primary"
                       }`}
                     >
                       Announcements
@@ -291,8 +314,10 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
 
                     <Link
                       to="/contact"
-                      className={`block py-2 text-lg font-medium transition-colors hover:text-primary ${
-                        location.pathname === "/contact" ? "text-primary" : ""
+                      className={`block py-2 px-3 rounded-md text-lg font-medium transition-all duration-200 ${
+                        location.pathname === "/contact"
+                          ? "bg-primary/10 text-primary"
+                          : "hover:text-primary"
                       }`}
                     >
                       About Us
@@ -300,40 +325,40 @@ const hasInProgress = emergencyList.some((e) => e.status === "in_progress");
                   </div>
 
                   {/* User Actions - Mobile */}
-                 <div className="p-4 border-t space-y-2">
-                      {isResidentOrUser ? (
-                        <>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start"
-                            onClick={() => navigate("/resident-notification")}
-                          >
-                            <Bell className="mr-2 h-4 w-4" />
-                            Notifications
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start"
-                            onClick={() => navigate("/settings")}
-                          >
-                            <User className="mr-2 h-4 w-4" />
-                            Settings
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
-                            onClick={handleLogout}
-                          >
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Sign Out
-                          </Button>
-                        </>
-                      ) : (
-                        <Button asChild className="w-full">
-                          <Link to="/login">Sign In</Link>
+                  <div className="p-4 border-t space-y-2">
+                    {isResidentOrUser ? (
+                      <>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => navigate("/resident-notification")}
+                        >
+                          <Bell className="mr-2 h-4 w-4" />
+                          Notifications
                         </Button>
-                      )}
-                    </div>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => navigate("/settings")}
+                        >
+                          <User className="mr-2 h-4 w-4" />
+                          Settings
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Sign Out
+                        </Button>
+                      </>
+                    ) : (
+                      <Button asChild className="w-full">
+                        <Link to="/login">Sign In</Link>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

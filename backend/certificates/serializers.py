@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import CertificateRequest, BusinessPermit
-
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.db.models import Count, Avg
+from .models import CertificateRequest
+from django.utils.timezone import now
 class CertificateRequestSerializer(serializers.ModelSerializer):
     user_age = serializers.SerializerMethodField(read_only=True)
     user_birthdate = serializers.SerializerMethodField(read_only=True)
@@ -50,3 +54,34 @@ class BusinessPermitSerializer(serializers.ModelSerializer):
             'is_renewal', 'status', 'created_at', 'updated_at', 'user'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'user']
+
+class CertificateAnalyticsView(APIView):
+    """
+    Returns aggregated statistics and analytics for CertificateRequest.
+    """
+    def get(self, request):
+        total_certificates = CertificateRequest.objects.count()
+        
+        # By certificate type
+        per_type = CertificateRequest.objects.values('certificate_type') \
+            .annotate(total=Count('id')).order_by('-total')
+        
+        # By status
+        per_status = CertificateRequest.objects.values('status') \
+            .annotate(total=Count('id'))
+        
+        # Average age of requesters per certificate type
+        certificates_with_age = CertificateRequest.objects.exclude(user=None)
+        age_data = []
+        for ct in certificates_with_age.values('certificate_type').distinct():
+            certs = certificates_with_age.filter(certificate_type=ct['certificate_type'])
+            ages = [c.user_age() for c in certs if c.user_age() is not None]
+            avg_age = sum(ages)/len(ages) if ages else None
+            age_data.append({'certificate_type': ct['certificate_type'], 'average_age': avg_age})
+        
+        return Response({
+            'total_certificates': total_certificates,
+            'by_type': per_type,
+            'by_status': per_status,
+            'average_age_per_type': age_data
+        })

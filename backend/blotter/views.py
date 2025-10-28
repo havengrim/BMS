@@ -4,20 +4,30 @@ from rest_framework.exceptions import PermissionDenied
 from .models import BlotterReport
 from .serializers import BlotterReportSerializer
 
+
 class BlotterReportViewSet(viewsets.ModelViewSet):
     serializer_class = BlotterReportSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Filter to only the current user's blotters for list/retrieve/etc.
-        # Admins can see all if you add IsAdminUser later
-        return BlotterReport.objects.filter(filed_by=self.request.user).order_by('-created_at')
+        user = self.request.user
+        role = getattr(user.profile, 'role', None)  # safely get role from profile
+
+        # ✅ Admin and staff can see all blotter reports
+        if role in ['admin', 'staff']:
+            return BlotterReport.objects.all().order_by('-created_at')
+
+        # ✅ Residents can only see their own
+        if role == 'resident':
+            return BlotterReport.objects.filter(filed_by=user).order_by('-created_at')
+
+        # Default: return empty queryset if role undefined
+        return BlotterReport.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(filed_by=self.request.user)
 
     def get_permissions(self):
-        # Optional: Stricter permissions for sensitive actions
         if self.action in ['update', 'partial_update', 'destroy']:
             permission_classes = [permissions.IsAuthenticated, self.OwnershipPermission]
         else:
@@ -26,8 +36,10 @@ class BlotterReportViewSet(viewsets.ModelViewSet):
 
     class OwnershipPermission(permissions.BasePermission):
         def has_object_permission(self, request, view, obj):
-            # Only allow actions on own blotters
-            return obj.filed_by == request.user
+            user = request.user
+            role = getattr(user.profile, 'role', None)
+            # ✅ Allow if owner, or admin/staff
+            return obj.filed_by == user or role in ['admin', 'staff']
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
