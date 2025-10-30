@@ -351,7 +351,7 @@ export default function SettingsPage() {
       ctx.fillText("BARANGAY IDENTIFICATION CARD", canvas.width / 2, 32 * scale);
       ctx.font = `${10 * scale}px Arial`;
       ctx.globalAlpha = 0.8;
-      ctx.fillText("MAIMPIS, PAMPANGA", canvas.width / 2, 42 * scale);
+      ctx.fillText("SINDALAN SAN FERNANDO PAMPANGA", canvas.width / 2, 42 * scale);
       ctx.globalAlpha = 1.0;
 
       ctx.fillStyle = "white";
@@ -527,7 +527,7 @@ export default function SettingsPage() {
             <div className="text-white">
               <h2 className="text-sm font-bold tracking-wide">REPUBLIC OF THE PHILIPPINES</h2>
               <h3 className="text-xs opacity-90">BARANGAY IDENTIFICATION CARD</h3>
-              <div className="text-xs opacity-80 mt-1">MAIMPIS, PAMPANGA</div>
+              <div className="text-xs opacity-80 mt-1">SINDALAN SAN FERNANDO PAMPANGA</div>
             </div>
           </div>
           <div className="p-4 text-white">

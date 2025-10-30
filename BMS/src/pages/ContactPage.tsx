@@ -11,7 +11,7 @@ const contactInfo = [
   {
     icon: Phone,
     title: "Phone Numbers",
-    details: ["Landline: (045) 123-4567", "Mobile: 0917-123-4567", "Emergency: 0918-765-4321"],
+    details: [ "Mobile:  09694735789", "Emergency:  09694735789"],
   },
   {
     icon: Mail,
@@ -371,7 +371,7 @@ export default function ContactPage() {
                   size="sm"
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Text: 0919-876-5432
+                  Text: 09694735789
                 </Button>
               </CardContent>
             </Card>
