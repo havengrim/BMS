@@ -6,12 +6,24 @@ from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
-from .serializer import RegisterSerializer, UserSerializer, CustomTokenObtainPairSerializer  # Fixed typo: serializer -> serializer (assuming it's serializers.py)
+from .serializer import RegisterSerializer, UserSerializer, CustomTokenObtainPairSerializer
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import MultiPartParser, FormParser
 from datetime import timedelta
-from django.conf import settings  # For SIMPLE_JWT lifetimes
+from django.conf import settings
 
+# ✅ Helper function to check roles
+def is_admin_or_staff(user):
+    # if you’re using a related profile with role, adjust to user.profile.role
+    role = getattr(user, "profile", None)
+    if role:
+        return role.role in ["admin", "staff"]
+    return False
+
+
+# -----------------------------
+# REGISTER (public)
+# -----------------------------
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
@@ -21,18 +33,33 @@ def register(request):
         return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+# -----------------------------
+# GET ALL USERS (admin/staff only)
+# -----------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_users(request):
+    if not is_admin_or_staff(request.user):
+        return Response(
+            {"detail": "Forbidden: Only admin or staff can access this endpoint."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     users = User.objects.all()
     serializer = UserSerializer(users, many=True, context={'request': request})
     return Response(serializer.data)
 
+
+# -----------------------------
+# CURRENT LOGGED-IN USER (/current-user/)
+# -----------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def current_user(request):
     user = request.user
     profile = getattr(user, 'profile', None)
+
     if profile is None:
         profile_data = {
             "name": "",
@@ -53,6 +80,7 @@ def current_user(request):
             "role": profile.role,
             "image": profile.image.url if profile.image else None,
         }
+
     data = {
         "id": user.id,
         "username": user.username,
@@ -61,6 +89,10 @@ def current_user(request):
     }
     return Response(data)
 
+
+# -----------------------------
+# USER DETAIL (self or admin/staff only)
+# -----------------------------
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
@@ -70,13 +102,23 @@ def user_detail(request, user_id):
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    # ✅ Access control: only owner or admin/staff can access
+    if request.user.id != user.id and not is_admin_or_staff(request.user):
+        return Response(
+            {"detail": "Forbidden: You can only access your own account or be an admin/staff."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    # ----- GET -----
     if request.method == 'GET':
         serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data)
 
+    # ----- PUT -----
     elif request.method == 'PUT':
         serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
+            # Ensure user has a profile before update
             if not hasattr(user, 'profile'):
                 from accounts.models import Profile
                 Profile.objects.create(
@@ -93,10 +135,15 @@ def user_detail(request, user_id):
             return Response({"message": "User updated successfully", "user": serializer.data})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    # ----- DELETE -----
     elif request.method == 'DELETE':
         user.delete()
         return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
+
+# -----------------------------
+# LOGIN (with HttpOnly cookies)
+# -----------------------------
 class CustomEmailLoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -104,26 +151,24 @@ class CustomEmailLoginView(APIView):
         serializer = CustomTokenObtainPairSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data
-            secure_cookie = settings.DEBUG  # False in prod; True for dev (no HTTPS needed)
-            
-            # Return access in body for frontend
+            secure_cookie = not settings.DEBUG  # Only True in production
+
             response = Response({
                 "message": "Login successful",
-                "access": data["access"],  # Key fix: Include for JS store/header
+                "access": data["access"],
                 "user": data["user"]
             }, status=status.HTTP_200_OK)
 
-            # Set HttpOnly cookies (fallback for middleware)
             access_lifetime = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
             refresh_lifetime = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
-            
+
             response.set_cookie(
                 key='access_token',
                 value=data["access"],
                 httponly=True,
                 secure=secure_cookie,
                 samesite='Lax',
-                max_age=access_lifetime,  # Align to settings (60 min)
+                max_age=access_lifetime,
                 path='/',
             )
             response.set_cookie(
@@ -132,13 +177,17 @@ class CustomEmailLoginView(APIView):
                 httponly=True,
                 secure=secure_cookie,
                 samesite='Lax',
-                max_age=refresh_lifetime,  # Align to settings (1 day)
+                max_age=refresh_lifetime,
                 path='/',
             )
             return response
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+# -----------------------------
+# TOKEN REFRESH
+# -----------------------------
 class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
 
@@ -146,44 +195,35 @@ class TokenRefreshView(APIView):
         refresh_token = request.COOKIES.get('refresh_token')
 
         if not refresh_token:
-            return Response({"refresh": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)  # Match your 400 error format
+            return Response({"refresh": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             refresh = RefreshToken(refresh_token)
             new_access_token = str(refresh.access_token)
-            
-            # Handle rotation if enabled (your settings: True)
-            if settings.SIMPLE_JWT['ROTATE_REFRESH_TOKENS']:
-                new_refresh = str(refresh)
-                # Blacklist old if needed (your BLACKLIST_AFTER_ROTATION: True)
-                refresh.blacklist()
-            else:
-                new_refresh = refresh_token  # Reuse
+            new_refresh_token = str(refresh)
 
-            secure_cookie = settings.DEBUG  # False in prod
-            
-            # Return new access in body
+            secure_cookie = not settings.DEBUG
+
             response = Response({
-                "access": new_access_token,  # Key fix: Include for frontend update
+                "access": new_access_token,
                 "message": "Token refreshed"
             }, status=status.HTTP_200_OK)
 
-            # Update cookies
             access_lifetime = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
             refresh_lifetime = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
-            
+
             response.set_cookie(
                 key='access_token',
                 value=new_access_token,
                 httponly=True,
                 secure=secure_cookie,
-                samesite='Lax',  # Fixed: 'Lax' for consistency/CORS
+                samesite='Lax',
                 max_age=access_lifetime,
                 path='/',
             )
             response.set_cookie(
                 key='refresh_token',
-                value=new_refresh,
+                value=new_refresh_token,
                 httponly=True,
                 secure=secure_cookie,
                 samesite='Lax',
@@ -192,9 +232,13 @@ class TokenRefreshView(APIView):
             )
             return response
 
-        except TokenError as e:
+        except TokenError:
             return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+# -----------------------------
+# LOGOUT
+# -----------------------------
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

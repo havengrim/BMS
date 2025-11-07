@@ -110,11 +110,21 @@ export function Footer() {
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-white mb-1">{info.label}</h4>
-                    {info.details.map((detail, idx) => (
-                      <p key={idx} className="text-sm text-slate-200">
-                        {detail}
-                      </p>
-                    ))}
+                    {info.label === "Email"
+                      ? info.details.map((detail, idx) => (
+                          <a
+                            key={idx}
+                            href={`mailto:${detail}`}
+                            className="text-sm text-slate-200 hover:text-white"
+                          >
+                            {detail}
+                          </a>
+                        ))
+                      : info.details.map((detail, idx) => (
+                          <p key={idx} className="text-sm text-slate-200">
+                            {detail}
+                          </p>
+                        ))}
                   </div>
                 </div>
               ))}
