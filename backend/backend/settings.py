@@ -15,20 +15,18 @@ import os
 from dotenv import load_dotenv
 import dj_database_url
 from decouple import config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# Load environment variables
+load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-&9271$5$im%^9n1_t2+58q#l=r4m+r&$616rbep2$kidk*@90z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-
-# ALLOWED_HOSTS = []
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
@@ -38,7 +36,6 @@ ALLOWED_HOSTS = [
 ]
 
 # Application definition
-
 INSTALLED_APPS = [
     'channels',
     'corsheaders',
@@ -66,7 +63,7 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # must be top for CORS
+    'corsheaders.middleware.CorsMiddleware',  # must be at the top for CORS
     'backend.middleware.cors_error_fix.EnsureCORSHeadersMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -78,43 +75,50 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ASGI_APPLICATION = "backend.asgi.application"
+ROOT_URLCONF = 'backend.urls'
+
+ASGI_APPLICATION = 'backend.asgi.application'
+WSGI_APPLICATION = 'backend.wsgi.application'
+
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
         },
     },
 }
 
-# Remove CORS_ALLOWED_ORIGINS
+# CORS / CSRF
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True  # keep if you use cookies
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://www.sinco.website",
-    "https://sindalanconnect.vercel.app"
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://www.sinco.website',
+    'https://sindalanconnect.vercel.app',
 ]
-CORS_ALLOW_CREDENTIALS = True
-SESSION_COOKIE_SECURE = False 
-CSRF_COOKIE_SECURE = False 
-ROOT_URLCONF = 'backend.urls'
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
 
-    # Use cookies
-    "AUTH_COOKIE": "refresh_token",  # Cookie name
-    "AUTH_COOKIE_SECURE": False,     # True in production (HTTPS)
-    "AUTH_COOKIE_HTTP_ONLY": True,
-    "AUTH_COOKIE_PATH": "/",         # Send on all requests
-    "AUTH_COOKIE_SAMESITE": "Lax",   # Adjust for cross-site if needed
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
+# JWT Settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    # Cookie settings
+    'AUTH_COOKIE': 'refresh_token',
+    'AUTH_COOKIE_SECURE': True,      # Set True in production
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
 }
+
+# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -130,65 +134,34 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
-
-
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-
 DATABASES = {
     'default': dj_database_url.parse(
         config('DATABASE_URL'),
         conn_max_age=600,
-        ssl_require=True 
+        ssl_require=True
     )
 }
 
-
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# Static & Media
 STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-load_dotenv()
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-print("GROQ_API_KEY:", os.getenv("GROQ_API_KEY")) 

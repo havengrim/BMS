@@ -4,6 +4,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import * as React from "react";
+
+import { Spinner } from '@/components/ui/shadcn-io/spinner';
 import {
   AlertCircle,
   CheckCircle,
@@ -378,7 +380,7 @@ export default function Page() {
         <SidebarInset>
           <SiteHeader />
           <div className="flex flex-1 flex-col items-center justify-center">
-            <p>Loading...</p>
+            <Spinner/>
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -483,7 +485,7 @@ export default function Page() {
                       <CardDescription>View and manage all barangay complaints</CardDescription>
                     </CardHeader>
                     <CardContent className="!p-0">
-                      {isLoading && (
+                      {/* {isLoading && (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                           <p className="text-sm text-muted-foreground">Loading complaints...</p>
@@ -494,7 +496,7 @@ export default function Page() {
                         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                           <p className="text-red-700">Failed to load complaints: {error.message}</p>
                         </div>
-                      )}
+                      )} */}
 
                       {!isLoading && !error && (
                         <>

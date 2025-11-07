@@ -80,9 +80,9 @@ const contactMethods = [
     title: "Email Support",
     description: "Send us your questions and we'll respond within 24 hours",
     icon: Mail,
-    details: ["sindalan.barangay@gmail.com", "Response time: 24 hours"],
+    details: ["sindalanbarangay@yahoo.com", "Response time: 24 hours"],
     action: "Send Email",
-    href: "mailto:sindalan.barangay@gmail.com",
+    href: "mailto:sindalanbarangay@yahoo.com",
     color: "bg-green-500",
   },
   {
@@ -148,16 +148,29 @@ export default function HomePage() {
               place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
-                asChild
-                size="lg"
-                className="text-lg px-8 font-medium text-black bg-white hover:bg-gray-200 w-full sm:w-auto"
-                variant="outline"
-              >
-                <Link to="/login">
+              {isResident ? (
+                <Button
+                  asChild
+                  size="lg"
+                  className="text-lg px-8 font-medium text-black bg-white hover:bg-gray-200 w-full sm:w-auto"
+                  variant="outline"
+                >
+                  <Link to="/certificates">
+                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="text-lg px-8 font-medium text-black bg-white/40 cursor-not-allowed w-full sm:w-auto"
+                  variant="outline"
+                  disabled
+                  aria-disabled="true"
+                  title="Available to residents only"
+                >
                   Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="lg"
@@ -481,13 +494,6 @@ export default function HomePage() {
                 </AccordionItem>
               ))}
             </Accordion>
-            <div className="text-center mt-8">
-              <Button variant="outline" asChild>
-                <Link to="/faq">
-                  View All FAQs <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
           </div>
           {/* Emergency Contact with Modal */}
           <div className="mt-16 max-w-7xl mx-auto">

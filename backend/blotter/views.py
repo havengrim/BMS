@@ -1,6 +1,5 @@
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
 from .models import BlotterReport
 from .serializers import BlotterReportSerializer
 
@@ -35,7 +34,7 @@ class BlotterReportViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     class OwnershipPermission(permissions.BasePermission):
-        def has_object_permission(self, request, view, obj):
+        def has_object_permission(self, request, _view, obj):
             user = request.user
             role = getattr(user.profile, 'role', None)
             # ✅ Allow if owner, or admin/staff
@@ -48,7 +47,6 @@ class BlotterReportViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
-
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
