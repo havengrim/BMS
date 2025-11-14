@@ -141,7 +141,7 @@ export default function HomePage() {
               Barangay Sindalan Digital Services
             </Badge>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight tracking-tight">
-              Welcome to <span className="text-white/80">Maimpis Connect</span>
+              Welcome to <span className="text-white/80">Sindalan Connect</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl mb-6 max-w-2xl mx-auto text-white/85">
               Access barangay services with ease — request certificates, apply for permits, and stay informed in one
