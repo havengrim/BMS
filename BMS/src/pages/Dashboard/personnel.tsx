@@ -398,6 +398,29 @@ export default function Personnel() {
     [formData, imagePreview, imageFile],
   )
 
+  const paginationItems = useMemo(() => {
+    const delta = 1
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    const items: (number | string)[] = [1]
+    const leftEllipsis = currentPage > delta + 1
+    const start = Math.max(2, currentPage - delta)
+    const end = Math.min(totalPages - 1, currentPage + delta)
+    if (leftEllipsis && start > 2) {
+      items.push("...")
+    }
+    for (let i = start; i <= end; i++) {
+      items.push(i)
+    }
+    const rightEllipsis = currentPage < totalPages - delta
+    if (rightEllipsis && end < totalPages - 1) {
+      items.push("...")
+    }
+    items.push(totalPages)
+    return items
+  }, [currentPage, totalPages])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -604,16 +627,23 @@ export default function Personnel() {
                           <ChevronLeft className="h-4 w-4" />
                           Previous
                         </Button>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <Button
-                            key={page}
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(page)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {page}
-                          </Button>
+                        {paginationItems.map((page, index) => (
+                          <React.Fragment key={index}>
+                            {typeof page === "number" ? (
+                              <Button
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handlePageChange(page)}
+                                className="w-8 h-8 p-0"
+                              >
+                                {page}
+                              </Button>
+                            ) : (
+                              <div className="flex items-center justify-center w-8 h-8 text-sm text-muted-foreground">
+                                ...
+                              </div>
+                            )}
+                          </React.Fragment>
                         ))}
                         <Button
                           variant="outline"
