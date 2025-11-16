@@ -61,12 +61,15 @@ export function Footer() {
                   <Facebook className="h-5 w-5" />
                 </Button>
               </a>
-              <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
-                <Globe className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-slate-200 hover:text-white hover:bg-slate-800">
-                <Mail className="h-5 w-5" />
-              </Button>
+             <a href="mailto:sindalanbarangay@yahoo.com">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-200 hover:text-white hover:bg-slate-800"
+                >
+                  <Mail className="h-5 w-5" />
+                </Button>
+              </a>
             </div>
           </div>
 
