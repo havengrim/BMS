@@ -54,8 +54,9 @@ export const useEmergencies = (enabled = true) =>
         .then((res) => res.data),
     staleTime: 1000 * 60 * 5,
     enabled,
+    refetchInterval: enabled ? 10000 : false, // 🔁 auto-refetch every 10 seconds
+    refetchOnWindowFocus: false, // optional to avoid double fetching
   });
-
 // GET single emergency by ID
 export const useEmergency = (id: number | string) =>
   useQuery({
