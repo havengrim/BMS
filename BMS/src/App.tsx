@@ -1,4 +1,4 @@
-
+import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { OfflineDetector } from "@/components/offline-detector";
 import { Toaster } from "@/components/ui/toaster";
@@ -34,10 +34,16 @@ import BlotterAdminDashboard from "./pages/Dashboard/blotter";
 import SettingsPage from "./pages/SettingsPage";
 import { EmergencyStatusPopup } from "./components/emergency-status-popup";
 
-
 function App() {
   useLoadCurrentUser();
   const location = useLocation();
+
+  // ============================
+  // ⭐ UNIVERSAL SCROLL-TO-TOP
+  // ============================
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Paths where EmergencyStatusPopup should appear
   const protectedPaths = [
@@ -59,9 +65,7 @@ function App() {
     <div className="flex flex-col min-h-screen">
       <OfflineDetector />
 
-      {showEmergencyPopup && (
-        <EmergencyStatusPopup />
-      )}
+      {showEmergencyPopup && <EmergencyStatusPopup />}
 
       <main className="flex-1">
         <Routes>
@@ -108,6 +112,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/manage-business"
             element={
@@ -116,6 +121,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/personnel"
             element={
@@ -124,6 +130,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/certificates-list"
             element={
@@ -132,6 +139,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/announcements-manager"
             element={
@@ -140,6 +148,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/manage-complaints"
             element={
@@ -148,6 +157,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/notification"
             element={
